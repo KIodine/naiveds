@@ -179,6 +179,8 @@ int bstree_get(BSTree *tree, int key, int *res){
     **"directly" points to the address of the field**
     (which its type is "pointer to struct", indirect is
     "pointer of pointer to struct").
+    A additional benefit is that `indirect` actually "stays" on
+    its parent.
     
     if we know where the thing(pointer to struct) is, we can use it and
     even modify the field holds it.
@@ -186,7 +188,7 @@ int bstree_get(BSTree *tree, int key, int *res){
     Or was it?
 */
 int bstree_delete(BSTree *tree, int key){
-    BSTNode **indirect = &tree->root, **victim, *hold;
+    BSTNode **indirect = &tree->root, **victim, *next, *hold;
 
     for (;*indirect != NULL;){
         if ((*indirect)->key == key){
@@ -194,28 +196,21 @@ int bstree_delete(BSTree *tree, int key){
             victim = find_precedence(indirect);
             // we can abuse pointer to make even shorter/cleaner code here.
             if (victim != NULL){
-                (*indirect)->key = (*victim)->key;
-                (*indirect)->val = (*victim)->val;
                 /* the "adopt", now victim is alone */
                 // abuse ver: *victim = (*victim)->left;
                 // "unlinks" the node.
-                hold = *victim;
-                *victim = (*victim)->left;
+                next = (*victim)->left;
                 break;
             }
             victim = find_successor(indirect);
             if (victim != NULL){
-                (*indirect)->key = (*victim)->key;
-                (*indirect)->val = (*victim)->val;
-                hold = *victim;
-                *victim = (*victim)->right;
+                next = (*victim)->right;
                 break;
             }
             /* it is a leaf node */
             free(*indirect);
             /* set the branch to NULL */
             *indirect = NULL;
-//          break;
             /* bypass the after loop condition check and victim-killing */
             goto decr_count;
         }
@@ -231,6 +226,10 @@ int bstree_delete(BSTree *tree, int key){
         return BST_NOELEM;
     }
     /* we've completed the adopt, time to kill the victim */
+    (*indirect)->key = (*victim)->key;
+    (*indirect)->val = (*victim)->val;
+    hold = *victim;
+    *victim = next;
     free(hold);
 decr_count:
     tree->count--;
