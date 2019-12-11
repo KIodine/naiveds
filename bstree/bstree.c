@@ -22,34 +22,30 @@ void tree_purge(BSTNode* start){
 
 /* TODO modify these functions */
 static
-BSTNode *find_precedence(BSTNode *start, BSTNode **parent){
+BSTNode **find_precedence(BSTNode **start){
     /* find the rightmost node of left subtree */
-    BSTNode *can;
-    can = start->left;
-    if (can == NULL){
+    BSTNode **can;
+    can = &(*start)->left;
+    if (*can == NULL){
         return NULL;
     }
-    *parent = start;
-    for (;can->right != NULL;){
-        *parent = can;
-        can = can->right;
+    for (;(*can)->right != NULL;){
+        can = &(*can)->right;
     }
     return can;
 }
 
 static
-BSTNode *find_successor(BSTNode *start, BSTNode **parent){
+BSTNode **find_successor(BSTNode **start){
     /* find the leftmost node of right subtree */
-    BSTNode* can;
-    can = start->right;
-    if (can == NULL){
+    BSTNode **can;
+    can = &(*start)->right;
+    if (*can == NULL){
         return NULL;
     }
     /* only modify parent if candidate exists */
-    *parent = start;
-    for (;can->left != NULL;){
-        *parent = can;
-        can = can->left;
+    for (;(*can)->left != NULL;){
+        can = &(*can)->left;
     }
     return can;
 }
@@ -69,7 +65,7 @@ void bstree_free(BSTree *tree){
 }
 
 int bstree_set(BSTree *tree, int key, int val){
-    BSTNode *new = NULL, *cur, **indirect;
+    BSTNode *new = NULL, **indirect;
     /*
         `indirect` holds the pointer to either `left` or `right`
         of `BSTNode`.
@@ -190,29 +186,29 @@ int bstree_get(BSTree *tree, int key, int *res){
     Or was it?
 */
 int bstree_delete(BSTree *tree, int key){
-    BSTNode **indirect = &tree->root, *parent, *victim;
+    BSTNode **indirect = &tree->root, **victim, *hold;
 
     for (;*indirect != NULL;){
         if ((*indirect)->key == key){
             /* do delete stuff */
-            victim = find_precedence(*indirect, &parent);
+            victim = find_precedence(indirect);
             // we can abuse pointer to make even shorter/cleaner code here.
             if (victim != NULL){
+                (*indirect)->key = (*victim)->key;
+                (*indirect)->val = (*victim)->val;
                 /* the "adopt", now victim is alone */
-                if (parent != *indirect){
-                    parent->right = victim->left;
-                } else {
-                    parent->left = victim->left;
-                }
+                // abuse ver: *victim = (*victim)->left;
+                // "unlinks" the node.
+                hold = *victim;
+                *victim = (*victim)->left;
                 break;
             }
-            victim = find_successor(*indirect, &parent);
+            victim = find_successor(indirect);
             if (victim != NULL){
-                if (parent != *indirect){
-                    parent->left = victim->right;
-                } else {
-                    parent->right = victim->right;
-                }
+                (*indirect)->key = (*victim)->key;
+                (*indirect)->val = (*victim)->val;
+                hold = *victim;
+                *victim = (*victim)->right;
                 break;
             }
             /* it is a leaf node */
@@ -235,9 +231,7 @@ int bstree_delete(BSTree *tree, int key){
         return BST_NOELEM;
     }
     /* we've completed the adopt, time to kill the victim */
-    (*indirect)->key = victim->key;
-    (*indirect)->val = victim->val;
-    free(victim);
+    free(hold);
 decr_count:
     tree->count--;
     return BST_OK;
