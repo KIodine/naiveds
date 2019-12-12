@@ -22,7 +22,7 @@ void node_traversal(struct bstnode *node){
 
 
 void basic_test(void){
-    BSTree *tree;
+    struct bstree *tree;
     int res, ret_code;
 
     printf("alloc"NL);
@@ -63,7 +63,7 @@ void torture_test(void){
     read(fd, buffer, sizeof(uint32_t)*count);
     close(fd);
     
-    BSTree *tree = bstree_alloc();
+    struct bstree *tree = bstree_alloc();
 
     printf("torture set"NL);
     for (int i = 0; i < count; ++i){

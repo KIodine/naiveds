@@ -1,16 +1,16 @@
 #include "bstree.h"
 
 static
-BSTNode *node_alloc(int key, int val){
-    BSTNode *node = NULL;
-    node = calloc(1, sizeof(BSTNode));
+struct bstnode *node_alloc(int key, int val){
+    struct bstnode *node = NULL;
+    node = calloc(1, sizeof(struct bstnode));
     node->key = key;
     node->val = val;
     return node;
 }
 
 static
-void tree_purge(BSTNode* start){
+void tree_purge(struct bstnode* start){
     if (start == NULL){
         return;
     }
@@ -22,9 +22,9 @@ void tree_purge(BSTNode* start){
 
 /* TODO modify these functions */
 static
-BSTNode **find_precedence(BSTNode **start){
+struct bstnode **find_precedence(struct bstnode **start){
     /* find the rightmost node of left subtree */
-    BSTNode **can;
+    struct bstnode **can;
     can = &(*start)->left;
     if (*can == NULL){
         return NULL;
@@ -36,9 +36,9 @@ BSTNode **find_precedence(BSTNode **start){
 }
 
 static
-BSTNode **find_successor(BSTNode **start){
+struct bstnode **find_successor(struct bstnode **start){
     /* find the leftmost node of right subtree */
-    BSTNode **can;
+    struct bstnode **can;
     can = &(*start)->right;
     if (*can == NULL){
         return NULL;
@@ -52,23 +52,29 @@ BSTNode **find_successor(BSTNode **start){
 
 
 
-BSTree *bstree_alloc(void){
-    BSTree *tree = NULL;
-    tree = calloc(1, sizeof(BSTree));
+struct bstree *bstree_alloc(void){
+    struct bstree *tree = NULL;
+    tree = calloc(1, sizeof(struct bstree));
     return tree;
 }
 
-void bstree_free(BSTree *tree){
+void bstree_purge(struct bstree *tree){
+    tree_purge(tree->root);
+    tree->count = 0;
+    return;
+}
+
+void bstree_free(struct bstree *tree){
     tree_purge(tree->root);
     free(tree);
     return;
 }
 
-int bstree_set(BSTree *tree, int key, int val){
-    BSTNode *new = NULL, **indirect;
+int bstree_set(struct bstree *tree, int key, int val){
+    struct bstnode *new = NULL, **indirect;
     /*
         `indirect` holds the pointer to either `left` or `right`
-        of `BSTNode`.
+        of `struct bstnode`.
         the benefit of using `indirect` is that we can "directly" modify
         the field no matter what the form of the structure holding it,
         as long as all indirect pointer follow the same rule.
@@ -133,8 +139,8 @@ int bstree_set(BSTree *tree, int key, int val){
     return BST_OK;
 }
 
-int bstree_get(BSTree *tree, int key, int *res){
-    BSTNode *cur;
+int bstree_get(struct bstree *tree, int key, int *res){
+    struct bstnode *cur;
     cur = tree->root;
     for (;cur != NULL;){
         if (cur->key == key){
@@ -187,8 +193,8 @@ int bstree_get(BSTree *tree, int key, int *res){
 
     Or was it?
 */
-int bstree_delete(BSTree *tree, int key){
-    BSTNode **indirect = &tree->root, **victim, *next, *hold;
+int bstree_delete(struct bstree *tree, int key){
+    struct bstnode **indirect = &tree->root, **victim, *next, *hold;
 
     for (;*indirect != NULL;){
         if ((*indirect)->key == key){

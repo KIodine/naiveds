@@ -4,17 +4,14 @@
 #include <stdlib.h>
 
 
-typedef struct bstree  BSTree;
-typedef struct bstnode BSTNode;
-
 struct bstree {
     unsigned int count;
-    BSTNode *root;
+    struct bstnode *root;
 };
 
 struct bstnode {
     int key, val;
-    BSTNode *left, *right;
+    struct bstnode *left, *right;
 };
 
 
@@ -24,11 +21,12 @@ enum {
 };
 
 
-BSTree *bstree_alloc(void);
-void    bstree_free(BSTree *tree);
-int bstree_set(BSTree *tree, int key, int val);
-int bstree_get(BSTree *tree, int key, int *res);
-int bstree_delete(BSTree *tree, int key);
+struct bstree *bstree_alloc(void);
+void bstree_free(struct bstree *tree);
+int bstree_set(struct bstree *tree, int key, int val);
+int bstree_get(struct bstree *tree, int key, int *res);
+int bstree_delete(struct bstree *tree, int key);
 
+void bstree_purge(struct bstree *tree);
 
 #endif
