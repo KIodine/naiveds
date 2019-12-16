@@ -1,7 +1,7 @@
 # NAIVEDS - naive data structures
 A practice to some of the most basic data structures, including:
 - linked list
-    - [ ] singly linked list
+    - [X] singly linked list
     - [ ] doubly linked list
     - [ ] circular linked list
 - tree
