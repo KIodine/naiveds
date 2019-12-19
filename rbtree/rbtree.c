@@ -98,8 +98,8 @@ struct rbtree *rbtree_alloc(void){
     nil->parent = nil;
     nil->left   = nil;
     nil->right  = nil;
-    tree->nil = nil;
-    tree->root = nil;
+    tree->nil   = nil;
+    tree->root  = nil;
     return tree;
 }
 
@@ -117,8 +117,9 @@ void rbtree_free(struct rbtree *tree){
 }
 
 int rbtree_set(struct rbtree *tree, int key, int val){
-    struct rbtnode *new, *nil = tree->nil, **indirect;
+    struct rbtnode *new, *parent, *nil = tree->nil, **indirect;
     indirect = &tree->root;
+    parent = *indirect;
     for (;;){
         // this field is containing "NIL"
         if ((*indirect) == nil){
@@ -127,11 +128,15 @@ int rbtree_set(struct rbtree *tree, int key, int val){
                 was found.
             */
             new = rbtnode_alloc(tree, key, val);
+            new->parent = parent;
+            // TODO: find a way to link parent
             *indirect = new;
             tree->count++;
             break;
         }
         /* assured (*indirect) is not NULL */
+        /* preserve which way coming and proceed */
+        parent = *indirect;
         if (key < (*indirect)->key){
             /* indirect points to the field instead */
             indirect = &(*indirect)->left;
@@ -169,7 +174,7 @@ int rbtree_get(struct rbtree *tree, int key, int *res){
 int rbtree_delete(struct rbtree *tree, int key){
     struct rbtnode
         **indirect = &tree->root, **victim,
-        *next, *hold, *nil = tree->nil;
+        *orphan, *parent, *nil = tree->nil;
 
     for (;*indirect != nil;){
         if ((*indirect)->key == key){
@@ -178,15 +183,16 @@ int rbtree_delete(struct rbtree *tree, int key){
             // we can abuse pointer to make even shorter/cleaner code here.
             if (victim != nil){
                 // abuse ver: *victim = (*victim)->left;
-                next = (*victim)->left;
+                orphan = (*victim)->left;
                 break;
             }
             victim = find_successor(indirect, nil);
             if (victim != nil){
-                next = (*victim)->right;
+                orphan = (*victim)->right;
                 break;
             }
             /* it is a leaf node */
+            nil->parent = (*indirect)->parent;
             free(*indirect);
             /* set the branch to NULL */
             *indirect = nil;
@@ -207,10 +213,10 @@ int rbtree_delete(struct rbtree *tree, int key){
     /* we've completed the adopt, time to kill the victim */
     (*indirect)->key = (*victim)->key;
     (*indirect)->val = (*victim)->val;
-    hold = *victim;
     // "unlink" the node.
-    *victim = next;
-    free(hold);
+    orphan->parent = (*victim)->parent;
+    free(*victim);
+    *victim = orphan;
 decr_count:
     tree->count--;
     return RBT_OK;
