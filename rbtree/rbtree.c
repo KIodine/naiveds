@@ -77,10 +77,56 @@ struct rbtnode **find_successor(
 }
 
 static
-void left_rotate(struct rbtnode *node);
+void left_rotate(struct rbtree *tree, struct rbtnode *x){
+    struct rbtnode *y = x->right, *nil = tree->nil;
+    // struct rbtnode **y = &(*x)->right;
+    x->right = y->left;
+    if (y->left != nil){
+        y->left->parent = x;
+    }
+    y->parent = x->parent;
+
+    // struct rbtnode **x;
+    // *x = *y;
+    /*
+     * just modify the field holds x, in other words, x is one of:
+     *  1) the address of root of tree
+     *  2) the address of left or right child of parent
+     */
+    if (x->parent == nil){
+        // tree->root = y
+    } else if (x == x->parent->left){
+        x->parent->left = y;
+    } else {
+        //     x == x->parent->right
+        x->parent->right = y;
+    }
+
+    y->left = x;
+    x->parent = y;
+    return;
+}
 
 static
-void right_rotate(struct rbtnode *node);
+void right_rotate(struct rbtree *tree, struct rbtnode *x){
+    struct rbtnode *y = x->left, *nil = tree->nil;
+    x->left = y->right;
+    if (y->right != nil){
+        y->right->parent = x;
+    }
+    y->parent = x->parent;
+
+    if (x->parent == nil){
+        tree->root = y;
+    } else if (x == x->parent->left){
+        x->parent->left = y;
+    } else {
+        x->parent->right = y;
+    }
+    y->right = x;
+    x->parent = y;
+    return;
+}
 
 static
 void insert_fix(struct rbtnode *node);
