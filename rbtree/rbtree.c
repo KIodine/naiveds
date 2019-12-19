@@ -105,6 +105,7 @@ struct rbtree *rbtree_alloc(void){
 
 void rbtree_purge(struct rbtree *tree){
     tree_purge(tree->root, tree->nil);
+    tree->root = tree->nil;
     tree->count = 0;
     return;
 }

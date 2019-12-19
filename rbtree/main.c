@@ -49,6 +49,11 @@ void basic_test(void){
     ret_code = rbtree_delete(tree, 123);
     assert(ret_code == RBT_OK);
 
+
+    rbtree_purge(tree);
+    rbtree_set(tree, 165, 36213);
+
+
     printf("free"NL);
     rbtree_free(tree);
     return;
