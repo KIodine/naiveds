@@ -239,12 +239,14 @@ int rbtree_delete(struct rbtree *tree, int key){
                 break;
             }
             /* it is a leaf node */
-            nil->parent = (*indirect)->parent;
-            free(*indirect);
-            /* set the branch to NULL */
-            *indirect = nil;
-            /* bypass the after loop condition check and victim-killing */
-            goto decr_count;
+            orphan = nil;
+            victim = indirect;
+            /* bypassing:
+             *  1) after loop condition check
+             *  2) victim-killing
+             *  3) value copy
+             */
+            goto finish;
         }
         if (key < (*indirect)->key){
             indirect = &(*indirect)->left;
@@ -260,11 +262,16 @@ int rbtree_delete(struct rbtree *tree, int key){
     /* we've completed the adopt, time to kill the victim */
     (*indirect)->key = (*victim)->key;
     (*indirect)->val = (*victim)->val;
-    // "unlink" the node.
+finish:
+    /*
+     * set parent anyway (even it's `nil`), we'll use orphan as the
+     * start of delete_fix.
+     */
     orphan->parent = (*victim)->parent;
     free(*victim);
+    // "unlink" the node.
     *victim = orphan;
-decr_count:
+    /* maybe place `delete_fix` here */
     tree->count--;
     return RBT_OK;
 }
