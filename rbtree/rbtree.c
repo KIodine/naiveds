@@ -48,10 +48,10 @@ struct rbtnode **find_precedence(
         struct rbtnode **start, struct rbtnode *nil
     ){
     /* find the rightmost node of left subtree */
-    struct rbtnode **can;
+    struct rbtnode **can;   /* the candidate */
     can = &(*start)->left;
     if (*can == nil){
-        return nil;
+        return NULL;        /* just for sentinel */
     }
     for (;(*can)->right != nil;){
         can = &(*can)->right;
@@ -67,7 +67,7 @@ struct rbtnode **find_successor(
     struct rbtnode **can;
     can = &(*start)->right;
     if (*can == nil){
-        return nil;
+        return NULL;
     }
     /* only modify parent if candidate exists */
     for (;(*can)->left != nil;){
@@ -129,10 +129,10 @@ void right_rotate(struct rbtree *tree, struct rbtnode *x){
 }
 
 static
-void insert_fix(struct rbtnode *node);
+void insert_fix(struct rbtree *tree, struct rbtnode *node);
 
 static
-void delete_fix(struct rbtnode *node);
+void delete_fix(struct rbtree *tree, struct rbtnode *node);
 
 
 struct rbtree *rbtree_alloc(void){
@@ -221,20 +221,20 @@ int rbtree_get(struct rbtree *tree, int key, int *res){
 int rbtree_delete(struct rbtree *tree, int key){
     struct rbtnode
         **indirect = &tree->root, **victim,
-        *orphan, *parent, *nil = tree->nil;
+        *orphan, *hold, *nil = tree->nil;
 
     for (;*indirect != nil;){
         if ((*indirect)->key == key){
             /* do delete stuff */
             victim = find_precedence(indirect, nil);
             // we can abuse pointer to make even shorter/cleaner code here.
-            if (victim != nil){
+            if (victim != NULL){
                 // abuse ver: *victim = (*victim)->left;
                 orphan = (*victim)->left;
                 break;
             }
             victim = find_successor(indirect, nil);
-            if (victim != nil){
+            if (victim != NULL){
                 orphan = (*victim)->right;
                 break;
             }
@@ -243,8 +243,7 @@ int rbtree_delete(struct rbtree *tree, int key){
             victim = indirect;
             /* bypassing:
              *  1) after loop condition check
-             *  2) victim-killing
-             *  3) value copy
+             *  2) value copy
              */
             goto finish;
         }
@@ -267,11 +266,12 @@ finish:
      * set parent anyway (even it's `nil`), we'll use orphan as the
      * start of delete_fix.
      */
+    hold = *victim;
     orphan->parent = (*victim)->parent;
-    free(*victim);
     // "unlink" the node.
     *victim = orphan;
     /* maybe place `delete_fix` here */
+    free(hold);
     tree->count--;
     return RBT_OK;
 }
