@@ -2,6 +2,7 @@
 #define RBTREE_H
 
 #include <stdlib.h>
+#include <assert.h>
 
 
 struct rbtree {
@@ -33,5 +34,7 @@ int rbtree_get(struct rbtree *tree, int key, int *res);
 int rbtree_delete(struct rbtree *tree, int key);
 
 void rbtree_purge(struct rbtree *tree);
+
+int rbtree_validate(struct rbtree *tree);
 
 #endif

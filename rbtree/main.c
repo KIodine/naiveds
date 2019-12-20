@@ -30,8 +30,10 @@ void basic_test(void){
 
     printf("set"NL);
     rbtree_set(tree, 123, 456);
+    rbtree_validate(tree);
     rbtree_set(tree, 124, 455);
     rbtree_set(tree, 122, 454);
+
 
     printf("get"NL);
     rbtree_get(tree, 123, &res);
@@ -49,6 +51,7 @@ void basic_test(void){
     ret_code = rbtree_delete(tree, 123);
     assert(ret_code == RBT_OK);
 
+    rbtree_validate(tree);
 
     rbtree_purge(tree);
     rbtree_set(tree, 165, 36213);
@@ -74,11 +77,13 @@ void torture_test(void){
     for (int i = 0; i < count; ++i){
         rbtree_set(tree, buffer[i], 0);
     }
+    rbtree_validate(tree);
 
     printf("torture delete"NL);
     for (int i = 0; i < 8000; ++i){
         rbtree_delete(tree, buffer[1337+i]);
     }
+    rbtree_validate(tree);
 
     printf("torture free"NL);
     rbtree_free(tree);
