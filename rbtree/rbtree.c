@@ -152,46 +152,61 @@ void right_rotate(struct rbtree *tree, struct rbtnode *x){
 /* TODO: tighten the code flow */
 static
 void insert_fix(struct rbtree *tree, struct rbtnode *node){
-    struct rbtnode *uncle;
+    struct rbtnode *uncle, *parent, *gparent;
+    void (*rotator[2])(struct rbtree*, struct rbtnode*) = {
+        left_rotate, right_rotate
+    }; /* array of function pointers*/
     for (;node->parent->color == COLOR_RED;){
-        if (node->parent == node->parent->parent->left){
-            uncle = node->parent->parent->right;
+        parent  = node->parent;
+        gparent = parent->parent;
+        /*
+         * differences:
+         *  1) uncle
+         *  2) case #2
+         *  3) rotations
+         */
+        if (parent == gparent->left){
+            uncle = gparent->right;
             if (uncle->color == COLOR_RED){
                 /* case 1 */
-                node->parent->color = COLOR_BLACK;
-                uncle->color = COLOR_BLACK;
-                node->parent->parent->color = COLOR_RED;
-                node = node->parent->parent;
+                parent->color  = COLOR_BLACK;
+                uncle->color   = COLOR_BLACK;
+                gparent->color = COLOR_RED;
+                node = gparent;
                 continue;
             }
-            if (node == node->parent->right){
+            if (node == parent->right){
                 /* case 2 */
                 node = node->parent;
                 left_rotate(tree, node);
+                parent  = node->parent;
+                gparent = parent->parent;
             }
             /* case 3 */
-            node->parent->color = COLOR_BLACK;
-            node->parent->parent->color = COLOR_RED;
-            right_rotate(tree, node->parent->parent);
+            parent->color  = COLOR_BLACK;
+            gparent->color = COLOR_RED;
+            right_rotate(tree, gparent);
         } else {
-            uncle = node->parent->parent->left;
+            uncle = gparent->left;
             if (uncle->color == COLOR_RED){
                 /* case 1 */
-                node->parent->color = COLOR_BLACK;
-                uncle->color = COLOR_BLACK;
-                node->parent->parent->color = COLOR_RED;
-                node = node->parent->parent;
+                parent->color  = COLOR_BLACK;
+                uncle->color   = COLOR_BLACK;
+                gparent->color = COLOR_RED;
+                node = gparent;
                 continue;
             }
-            if (node == node->parent->left){
+            if (node == parent->left){
                 /* case 2 */
-                node = node->parent;
+                node = parent;
                 right_rotate(tree, node);
+                parent  = node->parent;
+                gparent = parent->parent;
             }
             /* case 3 */
-            node->parent->color = COLOR_BLACK;
-            node->parent->parent->color = COLOR_RED;
-            left_rotate(tree, node->parent->parent);
+            parent->color  = COLOR_BLACK;
+            gparent->color = COLOR_RED;
+            left_rotate(tree, gparent);
         }
     }
     tree->root->color = COLOR_BLACK;
@@ -200,22 +215,32 @@ void insert_fix(struct rbtree *tree, struct rbtnode *node){
 
 static
 void delete_fix(struct rbtree *tree, struct rbtnode *node){
-    struct rbtnode *sibling;
+    struct rbtnode *sibling, *parent;
+    void (*rotator[2])(struct rbtree*, struct rbtnode*) = {
+        left_rotate, right_rotate
+    }; /* array of function pointers*/
+    /*
+     * By abusing the fact boolean in C is actually evaluate to
+     * **0** and **1**, we can turn logic operation results into switch of
+     * rotation functions.
+     * Further, use **!<boolean>** to switch between 0 and 1.
+     */
     for (;node != tree->root && node->color == COLOR_BLACK;){
-        if (node == node->parent->left){
-            sibling = node->parent->right;
+        parent = node->parent;
+        if (node == parent->left){
+            sibling = parent->right;
             if (sibling->color == COLOR_RED){
                 /* case #1 */
                 sibling->color = COLOR_BLACK;
-                node->parent->color = COLOR_RED;
-                left_rotate(tree, node->parent);
-                sibling = node->parent->right;
+                parent->color = COLOR_RED;
+                left_rotate(tree, parent);
+                sibling = parent->right;
             }
             if (sibling->left->color  == COLOR_BLACK &&
                 sibling->right->color == COLOR_BLACK){
                 /* case #2 */
                 sibling->color = COLOR_RED;
-                node = node->parent;
+                node = parent;
                 continue;
             }
             if (sibling->left->color == COLOR_RED){
@@ -223,39 +248,39 @@ void delete_fix(struct rbtree *tree, struct rbtnode *node){
                 sibling->left->color = COLOR_BLACK;
                 sibling->color = COLOR_RED;
                 right_rotate(tree, sibling);
-                sibling = node->parent->right;
+                sibling = parent->right;
             }
             /* case #4 */
-            sibling->color = node->parent->color;
-            node->parent->color = COLOR_BLACK;
+            sibling->color = parent->color;
+            parent->color = COLOR_BLACK;
             sibling->right->color = COLOR_BLACK;
-            left_rotate(tree, node->parent);
+            left_rotate(tree, parent);
             /* breaking out */
             node = tree->root;
         } else {
-            sibling = node->parent->left;
+            sibling = parent->left;
             if (sibling->color == COLOR_RED){
                 sibling->color = COLOR_BLACK;
-                node->parent->color = COLOR_RED;
-                right_rotate(tree, node->parent);
-                sibling = node->parent->left;
+                parent->color = COLOR_RED;
+                right_rotate(tree, parent);
+                sibling = parent->left;
             }
             if (sibling->left->color  == COLOR_BLACK &&
                 sibling->right->color == COLOR_BLACK){
                 sibling->color = COLOR_RED;
-                node = node->parent;
+                node = parent;
                 continue;
             }
             if (sibling->right->color == COLOR_RED){
                 sibling->right->color = COLOR_BLACK;
                 sibling->color = COLOR_RED;
                 left_rotate(tree, sibling);
-                sibling = node->parent->left;
+                sibling = parent->left;
             }
-            sibling->color = node->parent->color;
-            node->parent->color = COLOR_BLACK;
+            sibling->color = parent->color;
+            parent->color = COLOR_BLACK;
             sibling->left->color = COLOR_BLACK;
-            right_rotate(tree, node->parent);
+            right_rotate(tree, parent);
             node = tree->root;
         }
     }
@@ -299,7 +324,7 @@ int rbtree_validate(struct rbtree *tree){
     assert(tree->nil->color == COLOR_BLACK);
     /* constrain #4 #5 */
     node_validate(tree, tree->root);
-    return;
+    return 0;
 }
 
 int rbtree_set(struct rbtree *tree, int key, int val){
