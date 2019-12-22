@@ -7,6 +7,11 @@
     #define FORCE_INLINE
 #endif
 
+enum chiral {
+    CHIRAL_LEFT  = 0,
+    CHIRAL_RIGHT = 1
+};
+
 
 static inline FORCE_INLINE
 struct rbtnode *node_alloc(int key, int val){
@@ -156,58 +161,38 @@ void insert_fix(struct rbtree *tree, struct rbtnode *node){
     void (*rotator[2])(struct rbtree*, struct rbtnode*) = {
         left_rotate, right_rotate
     }; /* array of function pointers*/
+    int chiral = 0, do_case2 = 0;
     for (;node->parent->color == COLOR_RED;){
         parent  = node->parent;
         gparent = parent->parent;
-        /*
-         * differences:
-         *  1) uncle
-         *  2) case #2
-         *  3) rotations
-         */
         if (parent == gparent->left){
-            uncle = gparent->right;
-            if (uncle->color == COLOR_RED){
-                /* case 1 */
-                parent->color  = COLOR_BLACK;
-                uncle->color   = COLOR_BLACK;
-                gparent->color = COLOR_RED;
-                node = gparent;
-                continue;
-            }
-            if (node == parent->right){
-                /* case 2 */
-                node = node->parent;
-                left_rotate(tree, node);
-                parent  = node->parent;
-                gparent = parent->parent;
-            }
-            /* case 3 */
-            parent->color  = COLOR_BLACK;
-            gparent->color = COLOR_RED;
-            right_rotate(tree, gparent);
+            uncle    = gparent->right;
+            chiral   = CHIRAL_LEFT;  /* left */
+            do_case2 = (node == parent->right);
         } else {
-            uncle = gparent->left;
-            if (uncle->color == COLOR_RED){
-                /* case 1 */
-                parent->color  = COLOR_BLACK;
-                uncle->color   = COLOR_BLACK;
-                gparent->color = COLOR_RED;
-                node = gparent;
-                continue;
-            }
-            if (node == parent->left){
-                /* case 2 */
-                node = parent;
-                right_rotate(tree, node);
-                parent  = node->parent;
-                gparent = parent->parent;
-            }
-            /* case 3 */
-            parent->color  = COLOR_BLACK;
-            gparent->color = COLOR_RED;
-            left_rotate(tree, gparent);
+            uncle    = gparent->left;
+            chiral   = CHIRAL_RIGHT; /* right */
+            do_case2 = (node == parent->left);
         }
+        if (uncle->color == COLOR_RED){
+            /* case #1 */
+            parent->color  = COLOR_BLACK;
+            uncle->color   = COLOR_BLACK;
+            gparent->color = COLOR_RED;
+            node = gparent;
+            continue;
+        }
+        if (do_case2){
+            /* case #2 */
+            node    = node->parent;
+            rotator[chiral](tree, node);
+            parent  = node->parent;
+            gparent = parent->parent;
+        }
+        /* case #3 */
+        parent->color  = COLOR_BLACK;
+        gparent->color = COLOR_RED;
+        rotator[!chiral](tree, gparent);
     }
     tree->root->color = COLOR_BLACK;
     return;
@@ -225,6 +210,7 @@ void delete_fix(struct rbtree *tree, struct rbtnode *node){
      * rotation functions.
      * Further, use **!<boolean>** to switch between 0 and 1.
      */
+    /* TODO: cache nephews and access them use chiral */
     for (;node != tree->root && node->color == COLOR_BLACK;){
         parent = node->parent;
         if (node == parent->left){
@@ -284,6 +270,9 @@ void delete_fix(struct rbtree *tree, struct rbtnode *node){
             node = tree->root;
         }
     }
+    /* --- new code --- */
+    
+    /* --- end --- */
     node->color = COLOR_BLACK;
     return;
 }
