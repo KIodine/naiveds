@@ -211,68 +211,59 @@ void delete_fix(struct rbtree *tree, struct rbtnode *node){
      * Further, use **!<boolean>** to switch between 0 and 1.
      */
     /* TODO: cache nephews and access them use chiral */
+    int chiral;
+    struct rbtnode *nephews[2];
     for (;node != tree->root && node->color == COLOR_BLACK;){
         parent = node->parent;
         if (node == parent->left){
             sibling = parent->right;
-            if (sibling->color == COLOR_RED){
-                /* case #1 */
-                sibling->color = COLOR_BLACK;
-                parent->color = COLOR_RED;
-                left_rotate(tree, parent);
-                sibling = parent->right;
-            }
-            if (sibling->left->color  == COLOR_BLACK &&
-                sibling->right->color == COLOR_BLACK){
-                /* case #2 */
-                sibling->color = COLOR_RED;
-                node = parent;
-                continue;
-            }
-            if (sibling->left->color == COLOR_RED){
-                /* case #3 */
-                sibling->left->color = COLOR_BLACK;
-                sibling->color = COLOR_RED;
-                right_rotate(tree, sibling);
-                sibling = parent->right;
-            }
-            /* case #4 */
-            sibling->color = parent->color;
-            parent->color = COLOR_BLACK;
-            sibling->right->color = COLOR_BLACK;
-            left_rotate(tree, parent);
-            /* breaking out */
-            node = tree->root;
+            chiral  = CHIRAL_LEFT;
         } else {
             sibling = parent->left;
-            if (sibling->color == COLOR_RED){
-                sibling->color = COLOR_BLACK;
-                parent->color = COLOR_RED;
-                right_rotate(tree, parent);
-                sibling = parent->left;
-            }
-            if (sibling->left->color  == COLOR_BLACK &&
-                sibling->right->color == COLOR_BLACK){
-                sibling->color = COLOR_RED;
-                node = parent;
-                continue;
-            }
-            if (sibling->right->color == COLOR_RED){
-                sibling->right->color = COLOR_BLACK;
-                sibling->color = COLOR_RED;
-                left_rotate(tree, sibling);
-                sibling = parent->left;
-            }
-            sibling->color = parent->color;
-            parent->color = COLOR_BLACK;
-            sibling->left->color = COLOR_BLACK;
-            right_rotate(tree, parent);
-            node = tree->root;
+            chiral  = CHIRAL_RIGHT;
         }
+        nephews[CHIRAL_LEFT]  = sibling->left;
+        nephews[CHIRAL_RIGHT] = sibling->right;
+        if (sibling->color == COLOR_RED){
+            /* case #1 */
+            sibling->color = COLOR_BLACK;
+            parent->color  = COLOR_RED;
+            rotator[chiral](tree, parent);
+            if (chiral == CHIRAL_LEFT){
+                sibling = parent->right;
+            } else {
+                sibling = parent->left;
+            }
+            nephews[CHIRAL_LEFT]  = sibling->left;
+            nephews[CHIRAL_RIGHT] = sibling->right;
+        }
+        if (nephews[CHIRAL_LEFT]->color  == COLOR_BLACK &&
+            nephews[CHIRAL_RIGHT]->color == COLOR_BLACK){
+            /* case #2 */
+            sibling->color = COLOR_RED;
+            node = parent;
+            continue;
+        }
+        if (nephews[chiral]->color == COLOR_RED){
+            /* case #3 */
+            nephews[chiral]->color = COLOR_BLACK;
+            sibling->color = COLOR_RED;
+            rotator[!chiral](tree, sibling);
+            if (chiral == CHIRAL_LEFT){
+                sibling = parent->right;
+            } else {
+                sibling = parent->left;
+            }
+            nephews[CHIRAL_LEFT]  = sibling->left;
+            nephews[CHIRAL_RIGHT] = sibling->right;
+        }
+        /* case #4 */
+        sibling->color = parent->color;
+        parent->color  = COLOR_BLACK;
+        nephews[!chiral]->color = COLOR_BLACK;
+        rotator[chiral](tree, parent);
+        node = tree->root;
     }
-    /* --- new code --- */
-    
-    /* --- end --- */
     node->color = COLOR_BLACK;
     return;
 }
