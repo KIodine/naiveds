@@ -1,11 +1,13 @@
 #ifndef BINHEAP_H
 #define BINHEAP_H
 
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 
+
 #define INIT_CAPACITY 32
-#define GROW_RATE     1.5
 
 
 struct maxheap {

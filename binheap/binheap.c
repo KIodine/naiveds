@@ -3,6 +3,15 @@
 
 static void heap_grow(struct maxheap *heap){
     /* alloc new array, copy, free old array */
+    int new_sz, *new_arr;
+    new_sz  = heap->capacity << 1; // just simply grow twice big.
+    new_arr = calloc(new_sz, sizeof(int));
+    
+    memcpy(new_arr, heap->arr, heap->capacity*sizeof(int));
+    free(heap->arr);
+    
+    heap->arr      = new_arr;
+    heap->capacity = new_sz;
     return;
 }
 
@@ -45,6 +54,10 @@ void maxheap_purge(struct maxheap *heap){
 int maxheap_insert(struct maxheap *heap, int val){
     int index, parent, tmp, *arr;
     index = heap->count++;
+    /* TODO: grow if required */
+    if (heap->capacity <= heap->count){
+        heap_grow(heap);
+    }
     arr = heap->arr;
     arr[index] = val;
     index++;
@@ -56,6 +69,8 @@ int maxheap_insert(struct maxheap *heap, int val){
             arr[index-1]  = arr[parent-1];
             arr[parent-1] = tmp;
             index = parent;
+        } else {
+            break;
         }
     }
     return MAXHEAP_OK;
