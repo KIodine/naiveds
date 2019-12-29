@@ -78,13 +78,6 @@ void left_rotate(struct rbtree *tree, struct rbtnode *x){
     }
     y->parent = x->parent;
 
-    // struct rbtnode **x;
-    // *x = *y;
-    /*
-     * just modify the field holds x, in other words, x is one of:
-     *  1) the address of root of tree
-     *  2) the address of left or right child of parent
-     */
     if (x->parent == nil){
         tree->root = y;
     } else if (x == x->parent->left){
@@ -235,17 +228,22 @@ void delete_fix(struct rbtree *tree, struct rbtnode *node){
 }
 
 void rbtree_init(struct rbtree *tree, struct rbtnode *nil, rbt_cmp_func cmp){
+    nil->left   = nil;
+    nil->right  = nil;
+    nil->parent = nil;
+    nil->color  = COLOR_BLACK;
     tree->count = 0;
     tree->cmp   = cmp;
     tree->nil   = nil;
     tree->root  = nil;
+    return;
 }
 
 int rbtree_validate(struct rbtree *tree){
     /* constrain #2 */
     assert(tree->root->color == COLOR_BLACK);
     /* constrain #3 */
-    assert(tree->nil->color == COLOR_BLACK);
+    assert(tree->nil->color  == COLOR_BLACK);
     /* constrain #4 #5 */
     node_validate(tree, tree->root);
     return 0;

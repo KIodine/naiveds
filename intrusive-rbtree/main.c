@@ -12,7 +12,53 @@
 #define TESTFNAME   "./testints.bin"
 
 
+struct pair {
+    struct rbtnode node;
+    int key, val;
+};
+
+
+int paircmp(struct rbtnode *a, struct rbtnode *b){
+    struct pair *pa, *pb;
+    int ret;
+    pa = container_of(a, struct pair, node);
+    pb = container_of(b, struct pair, node);
+    if (pa->key > pb->key){
+        ret = CMP_GT;
+    } else if (pa->key < pb->key){
+        ret = CMP_LT;
+    } else {
+        ret = CMP_EQ;
+    }
+    return ret;
+}
+
 void basic_test(void){
+    int fd, *arr;
+    struct rbtree tree;
+    struct pair sentinel, hint, *pair_arr;
+    
+    fd = open(TESTFNAME, O_RDONLY);
+    arr = malloc(sizeof(uint32_t)*NINT32);
+    read(fd, arr, sizeof(uint32_t)*NINT32);
+    close(fd);
+    
+    pair_arr = calloc(NINT32, sizeof(struct pair));
+    rbtree_init(&tree, &sentinel.node, paircmp);
+    for (int i = 0; i < NINT32; ++i){
+        pair_arr[i].key = arr[i];
+        rbtree_set(&tree, &pair_arr[i].node);
+    }
+    rbtree_validate(&tree);
+
+    for (int i = 0; i < NINT32; ++i){
+        hint.key = arr[i];
+        assert(rbtree_get(&tree, &hint.node) != NULL);
+    }
+
+    free(arr);
+    free(pair_arr);
+
     return;
 }
 

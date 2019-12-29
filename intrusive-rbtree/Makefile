@@ -4,7 +4,9 @@ OBJS 	:= main.o rbtree.o
 BIN 	:= test
 
 VALGRIND 	:= valgrind
-VFLAGS 		:= --leak-check=full --show-leak-kinds=all --verbose
+VFLAGS 		:= \
+	--leak-check=full --show-leak-kinds=all --verbose \
+	--track-origins=yes
 
 
 .PHONY: all run check clean clean_all
