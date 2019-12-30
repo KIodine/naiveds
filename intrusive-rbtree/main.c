@@ -46,15 +46,26 @@ void basic_test(void){
     pair_arr = calloc(NINT32, sizeof(struct pair));
     rbtree_init(&tree, &sentinel.node, paircmp);
     for (int i = 0; i < NINT32; ++i){
-        pair_arr[i].key = arr[i];
-        rbtree_set(&tree, &pair_arr[i].node);
+        struct pair *tmp = &pair_arr[i];
+        tmp->node.parent = NULL;
+        tmp->node.left   = NULL;
+        tmp->node.right  = NULL;
+        tmp->key = i;
+        rbtree_set(&tree, &tmp->node);
     }
     rbtree_validate(&tree);
 
     for (int i = 0; i < NINT32; ++i){
-        hint.key = arr[i];
+        hint.key = i;
         assert(rbtree_get(&tree, &hint.node) != NULL);
     }
+    rbtree_validate(&tree);
+
+    for (int i = 0; i < NINT32; ++i){
+        struct pair *tmp = &pair_arr[i];
+        rbtree_delete(&tree, &tmp->node);
+    }
+    rbtree_validate(&tree);
 
     free(arr);
     free(pair_arr);

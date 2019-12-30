@@ -10,10 +10,11 @@
     void *__mptr = (void*)(ptr);                \
     (type*)(__mptr - offsetof(type, member));   \
 })
-#define rbt_is_black(node)  ((node)->color == RBT_BLACK)
-#define rbt_is_red(node)    ((node)->color == RBT_RED)
-#define rbt_set_black(node) ((node)->color = RBT_BLACK)
-#define rbt_set_red(node)   ((node)->color = RBT_RED)
+#define rbt_is_black(node)  ((node)->color == COLOR_BLACK)
+#define rbt_is_red(node)    ((node)->color == COLOR_RED)
+#define rbt_set_black(node) ((node)->color = COLOR_BLACK)
+#define rbt_set_red(node)   ((node)->color = COLOR_RED)
+#define rbt_cpy_color(a, b) ((a)->color = (b)->color)
 
 
 struct rbtnode {
@@ -42,9 +43,9 @@ enum {
 };
 
 enum {
-    CMP_LT,
-    CMP_GT,
-    CMP_EQ,
+    CMP_LT = -1,
+    CMP_GT =  1,
+    CMP_EQ =  0,
 };
 
 void            rbtree_init(struct rbtree *tree, struct rbtnode *nil,

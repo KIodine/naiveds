@@ -5,8 +5,7 @@ BIN 	:= test
 
 VALGRIND 	:= valgrind
 VFLAGS 		:= \
-	--leak-check=full --show-leak-kinds=all --verbose \
-	--track-origins=yes
+	--leak-check=full --show-leak-kinds=all --verbose
 
 
 .PHONY: all run check clean clean_all

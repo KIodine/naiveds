@@ -18,11 +18,13 @@ static
 int node_validate(struct rbtree *tree, struct rbtnode *node){
     int bh_l = 0, bh_r;
     if (node == tree->nil){
-        return 0;
+        return 1;
     }
     if (node->color == COLOR_RED){
         /* constrain #4 */
         assert(node->parent->color == COLOR_BLACK);
+        assert(node->left->color   == COLOR_BLACK);
+        assert(node->right->color  == COLOR_BLACK);
     }
     bh_l = node_validate(tree, node->left);
     bh_r = node_validate(tree, node->right);
@@ -163,16 +165,9 @@ void delete_fix(struct rbtree *tree, struct rbtnode *node){
     void (*rotator[2])(struct rbtree*, struct rbtnode*) = {
         left_rotate, right_rotate
     }; /* array of function pointers*/
-    /*
-     * By abusing the fact boolean in C is actually evaluate to
-     * **0** and **1**, we can turn logic operation results into switch of
-     * rotation functions.
-     * Further, use **!<boolean>** to switch between 0 and 1.
-     */
-    /* TODO: cache nephews and access them use chiral */
     int chiral;
     struct rbtnode *nephews[2];
-    for (;node != tree->root && node->color == COLOR_BLACK;){
+    for (;node != tree->root && rbt_is_black(node);){
         parent = node->parent;
         if (node == parent->left){
             sibling = parent->right;
@@ -183,10 +178,10 @@ void delete_fix(struct rbtree *tree, struct rbtnode *node){
         }
         nephews[CHIRAL_LEFT]  = sibling->left;
         nephews[CHIRAL_RIGHT] = sibling->right;
-        if (sibling->color == COLOR_RED){
+        if (rbt_is_red(sibling)){
             /* case #1 */
-            sibling->color = COLOR_BLACK;
-            parent->color  = COLOR_RED;
+            rbt_set_black(sibling);
+            rbt_set_red(parent);
             rotator[chiral](tree, parent);
             if (chiral == CHIRAL_LEFT){
                 sibling = parent->right;
@@ -196,17 +191,17 @@ void delete_fix(struct rbtree *tree, struct rbtnode *node){
             nephews[CHIRAL_LEFT]  = sibling->left;
             nephews[CHIRAL_RIGHT] = sibling->right;
         }
-        if (nephews[CHIRAL_LEFT]->color  == COLOR_BLACK &&
-            nephews[CHIRAL_RIGHT]->color == COLOR_BLACK){
+        if (rbt_is_black(sibling->left) &&
+            rbt_is_black(sibling->right)){
             /* case #2 */
             sibling->color = COLOR_RED;
             node = parent;
             continue;
         }
-        if (nephews[chiral]->color == COLOR_RED){
+        if (nephews[!chiral]->color == COLOR_BLACK){
             /* case #3 */
             nephews[chiral]->color = COLOR_BLACK;
-            sibling->color = COLOR_RED;
+            rbt_set_red(sibling);
             rotator[!chiral](tree, sibling);
             if (chiral == CHIRAL_LEFT){
                 sibling = parent->right;
@@ -218,19 +213,19 @@ void delete_fix(struct rbtree *tree, struct rbtnode *node){
         }
         /* case #4 */
         sibling->color = parent->color;
-        parent->color  = COLOR_BLACK;
+        rbt_set_black(parent);
         nephews[!chiral]->color = COLOR_BLACK;
         rotator[chiral](tree, parent);
         node = tree->root;
     }
-    node->color = COLOR_BLACK;
+    rbt_set_black(node);
     return;
 }
 
 void rbtree_init(struct rbtree *tree, struct rbtnode *nil, rbt_cmp_func cmp){
-    nil->left   = nil;
-    nil->right  = nil;
-    nil->parent = nil;
+    nil->left   = NULL;
+    nil->right  = NULL;
+    nil->parent = NULL;
     nil->color  = COLOR_BLACK;
     tree->count = 0;
     tree->cmp   = cmp;
@@ -309,39 +304,80 @@ struct rbtnode *rbtree_get(struct rbtree *tree, struct rbtnode *hint){
 
 void rbtree_delete(struct rbtree *tree, struct rbtnode *node){
     struct rbtnode
-        **indirect = &tree->root, **victim,
+        **indirect, *subst,
         *orphan, *nil = tree->nil;
 
-    if (node == node->parent->left){
+    if (node == tree->root){
+        indirect = &tree->root;
+    } else if (node == node->parent->left){
         indirect = &node->parent->left;
     } else {
         indirect = &node->parent->right;
     }
+    /* --- just a direct copy from ngx_rbtree_delete */
+    // maybe there is a way to shrink code size.
+    if (node->left == nil){
+        orphan = node->right;
+        subst = node;
+    } else if (node->right == nil){
+        orphan = node->left;
+        subst = node;
+    } else {
+        subst = *(find_precedence(indirect, nil));
+        if (subst->left != nil){
+            orphan = subst->left;
+        } else {
+            orphan = subst->right;
+        }
+    }
 
-    victim = find_precedence(indirect, nil);
-    // we can abuse pointer to make even shorter/cleaner code here.
-    if (victim != NULL){
-        // abuse ver: *victim = (*victim)->left;
-        orphan = (*victim)->left;
-        goto finish;
+    if (subst == tree->root){
+        tree->root = orphan;
+        rbt_set_black(orphan);
+        node->left   = NULL;
+        node->right  = NULL;
+        node->parent = NULL;
+        return;
     }
-    victim = find_successor(indirect, nil);
-    if (victim != NULL){
-        orphan = (*victim)->right;
-        goto finish;
+
+    if (subst == subst->parent->left){
+        subst->parent->left = orphan;
+    } else {
+        subst->parent->right = orphan;
     }
-    /* it is a leaf node */
-    orphan = nil;
-    victim = indirect;
-finish:
-    /*
-     * set parent anyway (even it's `nil`), we'll use orphan as the
-     * start of delete_fix.
-     */
-    orphan->parent = (*victim)->parent;
-    // "unlink" the node.
-    *victim = orphan;
-    /* if node we're deleting is black, we have to fix it */
+
+    if (subst == node){
+        orphan->parent = subst->parent;
+    } else {
+        if (subst->parent == node){
+            orphan->parent = subst;
+        } else {
+            orphan->parent = subst->parent;
+        }
+        subst->left   = node->left;
+        subst->right  = node->right;
+        subst->parent = node->parent;
+        rbt_cpy_color(subst, node);
+        if (node == tree->root){
+            tree->root = subst;
+        } else {
+            if (node == node->parent->left){
+                node->parent->left = subst;
+            } else {
+                node->parent->right = subst;
+            }
+        }
+        if (subst->left != nil){
+            subst->left->parent = subst;
+        }
+        if (subst->right != nil){
+            subst->right->parent = subst;
+        }
+    }
+    node->left   = NULL;
+    node->right  = NULL;
+    node->parent = NULL;
+    /* --- */
     if (node->color == COLOR_BLACK){
         delete_fix(tree, orphan);
     }
