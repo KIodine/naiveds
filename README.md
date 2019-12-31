@@ -8,7 +8,7 @@ A practice to some of the most basic data structures, including:
 - tree
     - [X] binary search tree
     - [X] red-black tree
-    - [ ] intrusive rbtree
+    - [X] intrusive rbtree
     - [ ] AVL tree
 - heap
     - [X] binary heap
