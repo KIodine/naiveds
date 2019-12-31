@@ -36,40 +36,6 @@ int node_validate(struct rbtree *tree, struct rbtnode *node){
     return bh_l;
 }
 
-/* TODO modify these functions */
-static
-struct rbtnode **find_precedence(
-        struct rbtnode **start, struct rbtnode *nil
-    ){
-    /* find the rightmost node of left subtree */
-    struct rbtnode **can;   /* the candidate */
-    can = &(*start)->left;
-    if (*can == nil){
-        return NULL;        /* just for sentinel */
-    }
-    for (;(*can)->right != nil;){
-        can = &(*can)->right;
-    }
-    return can;
-}
-
-static
-struct rbtnode **find_successor(
-        struct rbtnode **start, struct rbtnode *nil
-    ){
-    /* find the leftmost node of right subtree */
-    struct rbtnode **can;
-    can = &(*start)->right;
-    if (*can == nil){
-        return NULL;
-    }
-    /* only modify parent if candidate exists */
-    for (;(*can)->left != nil;){
-        can = &(*can)->left;
-    }
-    return can;
-}
-
 static
 void left_rotate(struct rbtree *tree, struct rbtnode *x){
     struct rbtnode *y = x->right, *nil = tree->nil;
@@ -176,6 +142,11 @@ void delete_fix(struct rbtree *tree, struct rbtnode *node){
             sibling = parent->left;
             chiral  = CHIRAL_RIGHT;
         }
+        /*
+         *  if the layout is compact, we can just assign the address of
+         *  `sibling->left` to `nephews`.
+         *  nephews = (struct rbtnode *[2])&sibling->left;
+         */
         nephews[CHIRAL_LEFT]  = sibling->left;
         nephews[CHIRAL_RIGHT] = sibling->right;
         if (rbt_is_red(sibling)){
@@ -323,7 +294,7 @@ void rbtree_delete(struct rbtree *tree, struct rbtnode *node){
         orphan = node->left;
         subst = node;
     } else {
-        subst = *(find_precedence(indirect, nil));
+        subst = rbtree_min(*indirect, nil);
         if (subst->left != nil){
             orphan = subst->left;
         } else {
@@ -339,36 +310,43 @@ void rbtree_delete(struct rbtree *tree, struct rbtnode *node){
         node->parent = NULL;
         return;
     }
-
+    /* orphan replaces where subst be */
     if (subst == subst->parent->left){
         subst->parent->left = orphan;
     } else {
         subst->parent->right = orphan;
     }
-
     if (subst == node){
+        /*  
+         *  can't find subst other than node itself, node is
+         *  leaf node.
+         */
         orphan->parent = subst->parent;
     } else {
+        /* 
+         *  set parent of orphan as the "parent" of subst.
+         */
         if (subst->parent == node){
+            /* subst is direct child of node */
+            /* 
+             * subst is moving to where original parent is, so just
+             * link it right away.
+             */
             orphan->parent = subst;
         } else {
             orphan->parent = subst->parent;
         }
+        /* copy attributes of node */
         subst->left   = node->left;
         subst->right  = node->right;
         subst->parent = node->parent;
         rbt_cpy_color(subst, node);
-        if (node == tree->root){
-            tree->root = subst;
-        } else {
-            if (node == node->parent->left){
-                node->parent->left = subst;
-            } else {
-                node->parent->right = subst;
-            }
-        }
+
+        /* substitute the place holding `node` with `subst` */
+        *indirect = subst;
+
         if (subst->left != nil){
-            subst->left->parent = subst;
+            subst->left->parent  = subst;
         }
         if (subst->right != nil){
             subst->right->parent = subst;

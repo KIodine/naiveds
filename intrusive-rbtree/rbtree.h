@@ -56,10 +56,14 @@ void            rbtree_delete(struct rbtree *tree, struct rbtnode *node);
 
 int             rbtree_validate(struct rbtree *tree);
 
-/* new API
-struct rbtnode *rbtree_min(struct rbtree *tree);
-struct rbtnode *rbtree_next(struct rbtnode *node);
-*/
+
+static
+struct rbtnode *rbtree_min(struct rbtnode *node, struct rbtnode *nil){
+    for (;node->left != nil;){
+        node = node->left;
+    }
+    return node;
+};
 
 
 #endif
