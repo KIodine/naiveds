@@ -4,7 +4,7 @@ A practice to some of the most basic data structures, including:
     - [X] singly linked list
     - [X] doubly linked list
     - [X] circular linked list
-    - [ ] intrusive doubly linked list
+    - [X] intrusive doubly linked list
 - tree
     - [X] binary search tree
     - [X] red-black tree
