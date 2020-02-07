@@ -3,8 +3,10 @@
 
 
 #include <stdlib.h>
+#include <assert.h>
 
-
+// TODO: use `struct avlnode *[2]` to store left and right children.
+//       by doing so, specific style of coding can be performed.
 struct avlnode {
     struct avlnode *left, *right;
     int key, val, height;
@@ -24,5 +26,7 @@ int avl_insert(struct avltree *tree, int key, int val);
 int avl_get(struct avltree *tree, int key, int *res);
 int avl_delete(struct avltree *tree, int key);
 
+void avl_validate(struct avltree *tree);
+// void avl_avlize(struct avltree *tree);
 
 #endif /* AVLTREE_H */
