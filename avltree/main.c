@@ -12,12 +12,12 @@
 
 void trav(struct avlnode *node, int depth){
     if (node == NULL) return;
-    trav(node->left, depth + 1);
+    trav(node->child[CHILD_LEFT], depth + 1);
     for (int i = 0; i < depth; ++i){
         printf("  ");
     }
     printf("%d <%d>"NL, node->key, node->height);
-    trav(node->right, depth + 1);
+    trav(node->child[CHILD_RIGHT], depth + 1);
     return;
 }
 

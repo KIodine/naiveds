@@ -30,8 +30,8 @@ int max(int a, int b){
 static inline
 void update_height(struct avlnode *node){
     int lh, rh;
-    lh = get_height(node->left);
-    rh = get_height(node->right);
+    lh = get_height(node->child[CHILD_LEFT]);
+    rh = get_height(node->child[CHILD_RIGHT]);
     node->height = max(lh, rh) + 1;
     return;
 }
@@ -42,21 +42,17 @@ static void node_fix(struct avlnode **node){
     static void (*rotator[2])(struct avlnode **) = {
         left_rotate, right_rotate
     };
-    lh = get_height((*node)->left);
-    rh = get_height((*node)->right);
+    lh = get_height((*node)->child[CHILD_LEFT]);
+    rh = get_height((*node)->child[CHILD_RIGHT]);
     diff = abs(lh - rh);
     if (diff > 1){
         // check is LL|RR or LR|RL case
         // check is L or R
         // 0: L, 1: R
         dir = (lh > rh);
-        if (dir == 1){
-            b = &(*node)->left;
-        } else {
-            b = &(*node)->right;
-        }
-        lh = get_height((*b)->left);
-        rh = get_height((*b)->right);
+        b = &(*node)->child[!dir];
+        lh = get_height((*b)->child[CHILD_LEFT]);
+        rh = get_height((*b)->child[CHILD_RIGHT]);
         if ((lh > rh) != dir){
             // not the same case as parent
             // LR|RL case
@@ -71,9 +67,9 @@ static void node_fix(struct avlnode **node){
 }
 
 static void left_rotate(struct avlnode **a){
-    struct avlnode *b = (*a)->right;
-    (*a)->right = b->left;
-    b->left = (*a);
+    struct avlnode *b = (*a)->child[CHILD_RIGHT];
+    (*a)->child[CHILD_RIGHT] = b->child[CHILD_LEFT];
+    b->child[CHILD_LEFT] = (*a);
     (*a) = b;
     /*
         A            B
@@ -82,15 +78,15 @@ static void left_rotate(struct avlnode **a){
          / \      / \
         b   c    a   b
     */
-    update_height(b->left);
+    update_height(b->child[CHILD_LEFT]);
     update_height(b);
     return;
 }
 
 static void right_rotate(struct avlnode **a){
-    struct avlnode *b = (*a)->left;
-    (*a)->left = b->right;
-    b->right = (*a);
+    struct avlnode *b = (*a)->child[CHILD_LEFT];
+    (*a)->child[CHILD_LEFT] = b->child[CHILD_RIGHT];
+    b->child[CHILD_RIGHT] = (*a);
     (*a) = b;
     /*
         A            B 
@@ -100,15 +96,15 @@ static void right_rotate(struct avlnode **a){
     a   b            b   c
     */
     // the content of (*a) is now b.
-    update_height(b->right);
+    update_height(b->child[CHILD_RIGHT]);
     update_height(b);
     return;
 }
 
 static struct avlnode **node_min(struct avlnode **node){
     struct avlnode **res = node;
-    for (;(*res)->left != NULL;){
-        res = &(*res)->left;
+    for (;(*res)->child[CHILD_LEFT] != NULL;){
+        res = &(*res)->child[CHILD_LEFT];
     }
     return res;
 }
@@ -127,8 +123,8 @@ void node_free(struct avlnode *node){
     if (node == NULL){
         return;
     }
-    node_free(node->left);
-    node_free(node->right);
+    node_free(node->child[CHILD_LEFT]);
+    node_free(node->child[CHILD_RIGHT]);
     free(node);
     return;
 }
@@ -142,9 +138,9 @@ int node_insert(struct avlnode **node, int key, int val){
         *node = newnode;
     } else {
         if ((*node)->key > key){
-            ret = node_insert(&(*node)->left, key, val);
+            ret = node_insert(&(*node)->child[CHILD_LEFT], key, val);
         } else if ((*node)->key < key) {
-            ret = node_insert(&(*node)->right, key, val);
+            ret = node_insert(&(*node)->child[CHILD_RIGHT], key, val);
         } else {
             // key is occupied.
             ret = -1;
@@ -169,29 +165,29 @@ int node_delete(struct avlnode **node, int key){
         ret = -1;
     } else {
         if (key < (*node)->key){
-            ret = node_delete(&(*node)->left, key);
+            ret = node_delete(&(*node)->child[CHILD_LEFT], key);
         } else if (key > (*node)->key){
-            ret = node_delete(&(*node)->right, key);
+            ret = node_delete(&(*node)->child[CHILD_RIGHT], key);
         } else {
             // find target
             // one child|no child case
-            if ((*node)->left == NULL){
+            if ((*node)->child[CHILD_LEFT] == NULL){
                 tmp = (*node);
-                *node = (*node)->right;
+                *node = (*node)->child[CHILD_RIGHT];
                 free(tmp);
-            } else if ((*node)->right == NULL){
+            } else if ((*node)->child[CHILD_RIGHT] == NULL){
                 tmp = (*node);
-                *node = (*node)->left;
+                *node = (*node)->child[CHILD_LEFT];
                 free(tmp);
             } else {
                 // 2 child case
-                victim = node_min(&(*node)->right);
+                victim = node_min(&(*node)->child[CHILD_RIGHT]);
                 //victim = node_successor(node);
                 (*node)->key = (*victim)->key;
                 (*node)->val = (*victim)->val;
                 key = (*victim)->key;
                 // successor is the leftmost node of right subtree.
-                ret = node_delete(&(*node)->right, key);
+                ret = node_delete(&(*node)->child[CHILD_RIGHT], key);
             }
         }
     }
@@ -210,19 +206,19 @@ static void node_validate(struct avlnode *node){
     if (node == NULL){
         return;
     } else {
-        node_validate(node->left);
-        node_validate(node->right);
+        node_validate(node->child[CHILD_LEFT]);
+        node_validate(node->child[CHILD_RIGHT]);
     }
     // check basic BST rules 
-    if (node->left != NULL){
-        assert(node->left->key < node->key);
+    if (node->child[CHILD_LEFT] != NULL){
+        assert(node->child[CHILD_LEFT]->key < node->key);
     }
-    if (node->right != NULL){
-        assert(node->right->key > node->key);
+    if (node->child[CHILD_RIGHT] != NULL){
+        assert(node->child[CHILD_RIGHT]->key > node->key);
     }
     // check AVL tree rules
-    lh = get_height(node->left);
-    rh = get_height(node->right);
+    lh = get_height(node->child[CHILD_LEFT]);
+    rh = get_height(node->child[CHILD_RIGHT]);
     diff = abs(lh - rh);
     assert(diff < 2);
     return;
@@ -252,9 +248,9 @@ int avl_get(struct avltree *tree, int key, int *res){
     tmp = tree->root;
     for (;tmp != NULL;){
         if (key > tmp->key){
-            tmp = tmp->right;
+            tmp = tmp->child[CHILD_RIGHT];
         } else if (key < tmp->key){
-            tmp = tmp->left;
+            tmp = tmp->child[CHILD_LEFT];
         } else {
             *res = tmp->val;
             break;

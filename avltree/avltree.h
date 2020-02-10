@@ -8,7 +8,7 @@
 // TODO: use `struct avlnode *[2]` to store left and right children.
 //       by doing so, specific style of coding can be performed.
 struct avlnode {
-    struct avlnode *left, *right;
+    struct avlnode *child[2];
     int key, val, height;
 };
 
@@ -17,6 +17,10 @@ struct avltree {
     int count;
 };
 
+enum {
+    CHILD_LEFT  = 0,
+    CHILD_RIGHT = 1,
+};
 
 struct avltree *avl_alloc(void);
 void avl_purge(struct avltree *tree);
