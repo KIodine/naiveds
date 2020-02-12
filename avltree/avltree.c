@@ -67,11 +67,6 @@ static void node_fix(struct avlnode **node){
         // do nothing, just update.
         update_height(*node);
     }
-    // debug check
-    lh = get_height((*node)->child[CLD_L]);
-    rh = get_height((*node)->child[CLD_R]);
-    diff = abs(lh - rh);
-    assert(diff < 2);
     return;
 }
 
@@ -215,9 +210,8 @@ int node_delete(struct avlnode **node, int key){
             }
         }
     }
-    // bail out or do fixup...
+    // bail out or do fixup
     if (ret == -1){
-        assert((*node) == NULL);
         return ret;
     }
     if ((*node) != NULL){

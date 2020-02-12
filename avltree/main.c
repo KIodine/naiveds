@@ -67,11 +67,7 @@ void torture_test(void){
     
     tree = avl_alloc();
     elems = malloc(sizeof(uint32_t)*NINT32);
-/*
-    for (int i = 0; i < NINT32; ++i){
-        elems[i] = (uint32_t)i;
-    }
-*/
+
     fd = open("./test.bin", O_RDONLY);
     read(fd, elems, sizeof(uint32_t)*NINT32);
     close(fd);
@@ -94,7 +90,6 @@ void torture_test(void){
     printf("torture delete"NL);
     for (int i = 0; i < 1000; ++i){
         res = avl_delete(tree, elems[i]);
-        //printf("%d: %16d"NL, i, elems[i]);
     }
     avl_validate(tree);
     printf("done"NL);
