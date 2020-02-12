@@ -11,13 +11,15 @@
 
 
 void trav(struct avlnode *node, int depth){
-    if (node == NULL) return;
-    trav(node->child[CHILD_LEFT], depth + 1);
+    if (node == NULL){
+        return;
+    }
+    trav(node->child[CLD_L], depth + 1);
     for (int i = 0; i < depth; ++i){
         printf("  ");
     }
     printf("%d <%d>"NL, node->key, node->height);
-    trav(node->child[CHILD_RIGHT], depth + 1);
+    trav(node->child[CLD_R], depth + 1);
     return;
 }
 
@@ -28,21 +30,16 @@ void basic_test(void){
     tree = avl_alloc();
 
     printf("basic insert test..."NL);
-    //trav(tree->root, 0);
-    //printf("--------"NL);
-    for (int i = 0; i < 10; ++i){
+    for (int i = 0; i < 64; ++i){
         res = avl_insert(tree, i, 0);
-        //trav(tree->root, 0);
-        //printf("--------"NL);
         assert(res == 0);
     }
     avl_validate(tree);
-    //trav(tree->root, 0);
     printf("yes"NL);
 
 
     printf("basic get test..."NL);
-    for (int i = 0; i < 10; ++i){
+    for (int i = 0; i < 64; ++i){
         res = avl_get(tree, i, &tmp);
         assert(res == 0);
     }
@@ -51,7 +48,7 @@ void basic_test(void){
 
 
     printf("basic delete test..."NL);
-    for (int i = 3; i < 8; ++i){
+    for (int i = 30; i < 62; ++i){
         res = avl_delete(tree, i);
         assert(res == 0);
     }
@@ -64,12 +61,50 @@ void basic_test(void){
 }
 
 void torture_test(void){
+    int fd, res, qres;
+    uint32_t *elems;
+    struct avltree *tree;
+    
+    tree = avl_alloc();
+    elems = malloc(sizeof(uint32_t)*NINT32);
+
+    fd = open("./test.bin", O_RDONLY);
+    read(fd, elems, sizeof(uint32_t)*NINT32);
+    close(fd);
+
+    printf("torture insert"NL);
+    for (int i = 0; i < NINT32; ++i){
+        res = avl_insert(tree, elems[i], 0);
+        assert(res == 0);
+    }
+    avl_validate(tree);
+    printf("done"NL);
+
+    printf("torture get"NL);
+    for (int i = 0; i < NINT32; ++i){
+        res = avl_get(tree, elems[i], &qres);
+        assert(res == 0);
+    }
+    printf("done"NL);
+
+    printf("torture delete"NL);
+    for (int i = 0; i < 1000; ++i){
+        res = avl_delete(tree, elems[i]);
+    }
+    avl_validate(tree);
+    printf("done"NL);
+
+    avl_free(tree);
+    tree = NULL;
+
+    free(elems);
+
     return;
 }
 
 int main(void){
     printf("start test"NL);
     basic_test();
-    //torture_test();
+    torture_test();
     return 0;
 }

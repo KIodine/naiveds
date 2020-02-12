@@ -2,6 +2,7 @@
 #define AVLTREE_H
 
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 
@@ -18,8 +19,8 @@ struct avltree {
 };
 
 enum {
-    CHILD_LEFT  = 0,
-    CHILD_RIGHT = 1,
+    CLD_L = 0,
+    CLD_R = 1,
 };
 
 struct avltree *avl_alloc(void);
