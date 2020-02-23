@@ -6,6 +6,8 @@ static struct avlnode *node_min(struct avlnode *node);
 static void left_rotate(struct avltree *tree, struct avlnode *a);
 static void right_rotate(struct avltree *tree, struct avlnode *a);
 
+static void node_print(struct avlnode *node, int depth);
+static void node_validate(struct avlnode *node, avl_cmp_t cmp);
 
 static inline int max(int a, int b){
     return (a > b)? a: b;
@@ -25,6 +27,7 @@ static struct avlnode *node_min(struct avlnode *node){
     return node;
 }
 
+// FIXME: rotation is broken, seems balance factor calulation is the key.
 static void left_rotate(struct avltree *tree, struct avlnode *a){
     struct avlnode *b, *beta, *parent, **rootp;
     b      = a->child[CLD_R];
@@ -83,29 +86,16 @@ static void right_rotate(struct avltree *tree, struct avlnode *a){
     return;
 }
 
-
-void avl_tree_init(struct avltree *tree, avl_cmp_t cmp){
-    tree->root  = NULL;
-    tree->cmp   = cmp;
-    tree->count = 0;
-    return;
-}
-
-void avl_node_init(struct avlnode *node){
-    memset(node, 0, sizeof(struct avlnode));
-    return;
-}
-
 int avl_insert(struct avltree *tree, struct avlnode *node){
     int cmpres;
-    struct avlnode **tmp, **rootp, *parent = NULL;
+    struct avlnode **tmp, **rootp, *fix = NULL;
 
     tmp = &tree->root;
     rootp = tmp;
 
     for (;(*tmp) != NULL;){
         cmpres = tree->cmp(node, (*tmp));
-        parent = *tmp;
+        fix = *tmp;
         if (cmpres < 0){
             tmp = &(*tmp)->child[CLD_L];
         } else if (cmpres > 0){
@@ -124,31 +114,37 @@ int avl_insert(struct avltree *tree, struct avlnode *node){
         // special case: insert at root
         return 0;
     }
-    node->parent = parent;
+    node->parent = fix;
     
     // do fix
     struct avlnode *child = node;
-    int is_same_dir;
-    for (;parent != NULL;){
+    int is_same_dir, tmp_factor;
+    for (;fix != NULL;){
         // FIXME: don't use node, determine child after inbalance is
         //        detected.
-        if (child == parent->child[CLD_L]){
-            parent->factor -= 1;
+        tmp_factor = fix->factor;
+        if (child == fix->child[CLD_L]){
+            tmp_factor -= 1;
         } else {
-            parent->factor += 1;
+            tmp_factor += 1;
         }
-        if (abs(parent->factor) < 2){
+        if (tmp_factor == 0){
+            // the insertion balances the tree, bail out
+            return 0;
+        }
+        fix->factor = tmp_factor;
+        if (abs(tmp_factor) < 2){
             // step upward
-            child = parent;
-            parent = child->parent;
+            child = fix;
+            fix = fix->parent;
             continue;
         }
-        if (parent->factor < 0){
-            child = parent->child[CLD_L];
+        if (fix->factor < 0){
+            child = fix->child[CLD_L];
         } else {
-            child = parent->child[CLD_R];
+            child = fix->child[CLD_R];
         }
-        is_same_dir = (child->factor < 0) == (parent->factor < 0);
+        is_same_dir = (child->factor < 0) == (fix->factor < 0);
         if (child->factor != 0 && !is_same_dir){
             // inbalabce and not the same case as parent
             if (child->factor < 0){
@@ -161,10 +157,10 @@ int avl_insert(struct avltree *tree, struct avlnode *node){
             // after rotation, node has descended for one level
             child = child->parent;
         }
-        if (parent->factor < 0){
-            right_rotate(tree, parent);
+        if (fix->factor < 0){
+            right_rotate(tree, fix);
         } else {
-            left_rotate(tree, parent);
+            left_rotate(tree, fix);
         }
         // it is guarenteed after one fix, the tree must be a valid AVL
         // tree (but can update factor up to log n).
@@ -279,7 +275,7 @@ int avl_delete(struct avltree *tree, struct avlnode *node){
         fix = fix->parent;
         
         if (fix->parent == NULL || !is_child_rotate){
-            // fix is root or handled pure L or R case
+            // fix is root or fixed pure L or R case
             break;
         }
         // after LL LR RL RR fix, the height is descended, change
@@ -293,4 +289,47 @@ int avl_delete(struct avltree *tree, struct avlnode *node){
         fix   = fix->parent;
     }
     return 0;
+}
+
+
+void avl_print(struct avltree *tree){
+    node_print(tree->root, 0);
+    return;
+}
+
+#define NL "\n"
+static
+void node_print(struct avlnode *node, int depth){
+    if (node == NULL){
+        return;
+    }
+    node_print(node->child[CLD_R], depth + 1);
+    for (int i = 0; i < depth; ++i){
+        printf("    ");
+        printf("[%d]"NL, node->factor);
+    }
+    node_print(node->child[CLD_L], depth + 1);
+    return;
+}
+#undef NL
+
+void avl_validate(struct avltree *tree){
+    node_validate(tree->root, tree->cmp);
+    return;
+}
+
+static
+void node_validate(struct avlnode *node, avl_cmp_t cmp){
+    int res;
+    if (node == NULL){
+        return;
+    }
+    // AVL basic property
+    assert(abs(node->factor) < 2);
+    // BST basic property
+    res = cmp(node->child[CLD_L], node->child[CLD_R]);
+    assert(res < 0);
+    node_validate(node->child[CLD_L], cmp);
+    node_validate(node->child[CLD_R], cmp);
+    return;
 }
