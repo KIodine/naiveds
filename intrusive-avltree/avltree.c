@@ -39,16 +39,18 @@ static void left_rotate(struct avltree *tree, struct avlnode *a){
     if (beta != NULL){
         beta->parent = a;
     }
-    if (a->parent != NULL){
+    
+    if (parent != NULL){
         if (a == parent->child[CLD_L]){
-            b = parent->child[CLD_L];
+            parent->child[CLD_L] = b;
         } else {
-            b = parent->child[CLD_R];
+            parent->child[CLD_R] = b;
         }
     } else {
         *rootp = b;
     }
     b->parent = parent;
+    
     b->child[CLD_L] = a;
     a->parent = b;
 
@@ -68,16 +70,18 @@ static void right_rotate(struct avltree *tree, struct avlnode *a){
     if (beta != NULL){
         beta->parent = a;
     }
-    if (a->parent != NULL){
+    
+    if (parent != NULL){
         if (a == parent->child[CLD_L]){
-            b = parent->child[CLD_L];
+            parent->child[CLD_L] = b;
         } else {
-            b = parent->child[CLD_R];
+            parent->child[CLD_R] = b;
         }
     } else {
-        tree->root = b;
+        *rootp = b;
     }
     b->parent = parent;
+    
     b->child[CLD_R] = a;
     a->parent = b;
 
@@ -174,7 +178,7 @@ struct avlnode *avl_get(struct avltree *tree, struct avlnode *hint){
     int cmpres;
     struct avlnode *res = tree->root;
     for (;res != NULL;){
-        cmpres = tree->cmp(res, hint);
+        cmpres = tree->cmp(hint, res);
         if (cmpres < 0){
             res = res->child[CLD_L];
         } else if (cmpres > 0){
@@ -187,7 +191,6 @@ struct avlnode *avl_get(struct avltree *tree, struct avlnode *hint){
 }
 
 int avl_delete(struct avltree *tree, struct avlnode *node){
-    int cmpres;
     struct avlnode *tmp, *parent, *fix;
     
     parent = node->parent;
@@ -204,6 +207,7 @@ int avl_delete(struct avltree *tree, struct avlnode *node){
         tmp = node_min(node->child[CLD_R]);
         if (tmp != node->child[CLD_R]){
             // is not direct child, we have to link the "orphan"
+            tmp->factor = node->factor;
             fix = tmp->parent;
             tmp->parent->factor += 1;
             tmp->parent->child[CLD_L] = tmp->child[CLD_R];
@@ -213,8 +217,19 @@ int avl_delete(struct avltree *tree, struct avlnode *node){
             tmp->child[CLD_R] = node->child[CLD_R];
             node->child[CLD_R]->parent = tmp;
         } else {
-            fix = tmp;
-            tmp->factor -= 1;
+            // is direct child
+            //fix = tmp;
+            //tmp->factor -= 1;
+
+            if (tmp->child[CLD_R] != NULL){
+                fix = tmp->child[CLD_R];
+                fix->factor = tmp->factor;
+            } else {
+                fix = tmp;
+            }
+            tmp->factor = node->factor;
+            fix->factor -= 1;
+
         }
         tmp->child[CLD_L] = node->child[CLD_L];
         node->child[CLD_L]->parent = tmp;
@@ -235,15 +250,39 @@ int avl_delete(struct avltree *tree, struct avlnode *node){
     }
     // do fixup
 
+    // FIXME: 
+    //      do fix if `fix->factor == 0`
+    //      keep update height until one of:
+    //          - root is reached
+    //          - proper fix is applied
+    //          - the fix node just become inbalance/skew*
+    //           
+    //           *deleting a node from tree always result in height
+    //            reduction, but if a node just become skew, meaning the
+    //            other side of the node is higher. Thus the maximum height
+    //            is not changed, in other words, the propagation stops.
+
+    if (fix->factor != 0 && abs(fix->factor) < 2){
+        return 0;
+    }
+
     struct avlnode *child = NULL;
     int is_same_dir, is_child_rotate;
     // child may be NULL, so we mix the first factor update in previous
     // code sections
 
     for (;fix != NULL;){
+        is_child_rotate = 0;
+        // maybe we jump to lable `update`
+
+        if (fix->factor == 0){
+            goto update;
+        }
+        // factor is non-zero
         if (abs(fix->factor) < 2){
             break;
         }
+        // |factor| is ge 2 and non-zero
         if (fix->factor > 0){
             child = fix->child[CLD_R];
         } else if (fix->factor < 0) {
@@ -274,6 +313,7 @@ int avl_delete(struct avltree *tree, struct avlnode *node){
         // since fix descended for one level, fix that
         fix = fix->parent;
         
+    update:
         if (fix->parent == NULL || !is_child_rotate){
             // fix is root or fixed pure L or R case
             break;
@@ -293,6 +333,7 @@ int avl_delete(struct avltree *tree, struct avlnode *node){
 
 
 void avl_print(struct avltree *tree){
+    putchar('\n');
     node_print(tree->root, 0);
     return;
 }
@@ -306,8 +347,8 @@ void node_print(struct avlnode *node, int depth){
     node_print(node->child[CLD_R], depth + 1);
     for (int i = 0; i < depth; ++i){
         printf("    ");
-        printf("[%d]"NL, node->factor);
     }
+    printf("[%d]"NL, node->factor);
     node_print(node->child[CLD_L], depth + 1);
     return;
 }
@@ -327,8 +368,10 @@ void node_validate(struct avlnode *node, avl_cmp_t cmp){
     // AVL basic property
     assert(abs(node->factor) < 2);
     // BST basic property
-    res = cmp(node->child[CLD_L], node->child[CLD_R]);
-    assert(res < 0);
+    if (node->child[CLD_L] && node->child[CLD_R]){
+        res = cmp(node->child[CLD_L], node->child[CLD_R]);
+        assert(res < 0);
+    }
     node_validate(node->child[CLD_L], cmp);
     node_validate(node->child[CLD_R], cmp);
     return;

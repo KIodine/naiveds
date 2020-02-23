@@ -31,6 +31,8 @@ void basic_test(void){
     int ret;
     struct pair *parr, *tmp_pair, hint_pair;
     struct avlnode *tmp_node;
+    
+    memset(&hint_pair.node, 0, sizeof(struct avlnode));
     parr = calloc(10, sizeof(struct pair));
     
     printf("basic insert...");
@@ -50,6 +52,7 @@ void basic_test(void){
         tmp_node = avl_get(&tree, &hint_pair.node);
         assert(tmp_node != NULL);
         tmp_pair = container_of(tmp_node, struct pair, node);
+        assert(tmp_pair->key == i);
     }
     printf("ok"NL);
 
@@ -58,6 +61,8 @@ void basic_test(void){
         tmp_pair = &parr[i];
         ret = avl_delete(&tree, &tmp_pair->node);
         assert(ret == 0);
+        avl_print(&tree);
+        printf("------------"NL);
     }
     avl_print(&tree);
     avl_validate(&tree);
