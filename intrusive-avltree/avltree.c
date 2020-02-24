@@ -97,6 +97,7 @@ int avl_insert(struct avltree *tree, struct avlnode *node){
     tmp = &tree->root;
     rootp = tmp;
 
+    assert(node->factor == 0);
     for (;(*tmp) != NULL;){
         cmpres = tree->cmp(node, (*tmp));
         fix = *tmp;
@@ -124,25 +125,26 @@ int avl_insert(struct avltree *tree, struct avlnode *node){
     struct avlnode *child = node;
     int is_same_dir, tmp_factor;
     for (;fix != NULL;){
-        // FIXME: don't use node, determine child after inbalance is
-        //        detected.
         tmp_factor = fix->factor;
+
         if (child == fix->child[CLD_L]){
             tmp_factor -= 1;
         } else {
             tmp_factor += 1;
         }
+        fix->factor = tmp_factor;
         if (tmp_factor == 0){
             // the insertion balances the tree, bail out
             return 0;
         }
-        fix->factor = tmp_factor;
+        assert(tmp_factor != 0);
         if (abs(tmp_factor) < 2){
             // step upward
             child = fix;
             fix = fix->parent;
             continue;
         }
+        assert(tmp_factor != 0 && abs(tmp_factor) == 2);
         if (fix->factor < 0){
             child = fix->child[CLD_L];
         } else {
@@ -150,7 +152,7 @@ int avl_insert(struct avltree *tree, struct avlnode *node){
         }
         is_same_dir = (child->factor < 0) == (fix->factor < 0);
         if (child->factor != 0 && !is_same_dir){
-            // inbalabce and not the same case as parent
+            // inbalabce and not the same direction as parent
             if (child->factor < 0){
                 // RL case
                 right_rotate(tree, child);
@@ -196,20 +198,45 @@ int avl_delete(struct avltree *tree, struct avlnode *node){
     parent = node->parent;
     if (node->child[CLD_L] == NULL){
         tmp = node->child[CLD_R];
-        parent->factor -= 1;
-        fix = parent;
+        
+        if (tmp){
+            fix = tmp;
+            assert(fix->factor == 0);
+        } else {
+            fix = parent;
+            if (node == fix->child[CLD_L]){
+                fix->factor += 1;
+            } else {
+                fix->factor -= 1;
+            }
+        }
+
     } else if (node->child[CLD_R] == NULL){
         tmp = node->child[CLD_L];
-        parent->factor += 1;
+        
         fix = parent;
+
+        if (tmp){
+            fix = tmp;
+            assert(fix->factor == 0);
+        } else {
+            fix = parent;
+            if (node == fix->child[CLD_L]){
+                fix->factor += 1;
+            } else {
+                fix->factor -= 1;
+            }
+        }
+
     } else {
         // 2 child case, tmp is guarenteed to be non-NULL
         tmp = node_min(node->child[CLD_R]);
+        assert(tmp->child[CLD_L] == NULL);
         if (tmp != node->child[CLD_R]){
             // is not direct child, we have to link the "orphan"
             tmp->factor = node->factor;
             fix = tmp->parent;
-            tmp->parent->factor += 1;
+            fix->factor += 1;
             tmp->parent->child[CLD_L] = tmp->child[CLD_R];
             if (tmp->child[CLD_R] != NULL){
                 tmp->child[CLD_R]->parent = tmp->parent;
@@ -218,9 +245,6 @@ int avl_delete(struct avltree *tree, struct avlnode *node){
             node->child[CLD_R]->parent = tmp;
         } else {
             // is direct child
-            //fix = tmp;
-            //tmp->factor -= 1;
-
             if (tmp->child[CLD_R] != NULL){
                 fix = tmp->child[CLD_R];
                 fix->factor = tmp->factor;
@@ -253,14 +277,9 @@ int avl_delete(struct avltree *tree, struct avlnode *node){
     // FIXME: 
     //      do fix if `fix->factor == 0`
     //      keep update height until one of:
-    //          - root is reached
-    //          - proper fix is applied
-    //          - the fix node just become inbalance/skew*
-    //           
-    //           *deleting a node from tree always result in height
-    //            reduction, but if a node just become skew, meaning the
-    //            other side of the node is higher. Thus the maximum height
-    //            is not changed, in other words, the propagation stops.
+    //      - root is reached
+    //      - proper fix is applied
+    //      - the fix node just become inbalance/skew*
 
     if (fix->factor != 0 && abs(fix->factor) < 2){
         return 0;
@@ -283,27 +302,27 @@ int avl_delete(struct avltree *tree, struct avlnode *node){
             break;
         }
         // |factor| is ge 2 and non-zero
+        assert(fix->factor != 0);
+        assert(abs(fix->factor) == 2);
         if (fix->factor > 0){
             child = fix->child[CLD_R];
-        } else if (fix->factor < 0) {
-            child = fix->child[CLD_L];
         } else {
-            child = NULL;
+            child = fix->child[CLD_L];
         }
-        if (child != NULL){
-            is_same_dir = (fix->factor > 0) == (child->factor > 0);
-            is_child_rotate = (child->factor != 0);
-            // note that `is_same_dir` doesn't cover the case
-            // when `child->factor == 0`.
-            if (!is_same_dir && is_child_rotate){
-                if (child->factor > 0){
-                    left_rotate(tree, child);
-                } else {
-                    right_rotate(tree, child);
-                }
-                // child have descended for one level, fix that
-                child = child->parent;
+        // double heavy or single heavy
+        assert(child != NULL);
+        is_same_dir = (fix->factor > 0) == (child->factor > 0);
+        is_child_rotate = (child->factor != 0);
+        // note that `is_same_dir` doesn't cover the case
+        // when `child->factor == 0`.
+        if (!is_same_dir && is_child_rotate){
+            if (child->factor > 0){
+                left_rotate(tree, child);
+            } else {
+                right_rotate(tree, child);
             }
+            // child have descended for one level, fix that
+            child = child->parent;
         }
         if (fix->factor > 0){
             left_rotate(tree, fix);
@@ -313,8 +332,13 @@ int avl_delete(struct avltree *tree, struct avlnode *node){
         // since fix descended for one level, fix that
         fix = fix->parent;
         
+        if (!is_child_rotate){
+            break;
+        }
     update:
-        if (fix->parent == NULL || !is_child_rotate){
+        // LOGIC error: the `is_child_rotate` flag erroneously let
+        // the `update` case breaks.
+        if (fix->parent == NULL){
             // fix is root or fixed pure L or R case
             break;
         }
@@ -328,6 +352,10 @@ int avl_delete(struct avltree *tree, struct avlnode *node){
         child = fix;
         fix   = fix->parent;
     }
+    node->child[CLD_L] = NULL;
+    node->child[CLD_R] = NULL;
+    node->factor = 0;
+    node->parent = NULL;
     return 0;
 }
 
@@ -348,7 +376,7 @@ void node_print(struct avlnode *node, int depth){
     for (int i = 0; i < depth; ++i){
         printf("    ");
     }
-    printf("[%d]"NL, node->factor);
+    printf("[%d] <%p>"NL, node->factor, (void*)node);
     node_print(node->child[CLD_L], depth + 1);
     return;
 }
@@ -371,6 +399,16 @@ void node_validate(struct avlnode *node, avl_cmp_t cmp){
     if (node->child[CLD_L] && node->child[CLD_R]){
         res = cmp(node->child[CLD_L], node->child[CLD_R]);
         assert(res < 0);
+    }
+    // more strict basic attribute test
+    if (!node->child[CLD_L] && !node->child[CLD_R]){
+        assert(node->factor == 0);
+    }
+    if (node->child[CLD_L] != NULL){
+        assert(node->child[CLD_L]->parent = node);
+    }
+    if (node->child[CLD_R] != NULL){
+        assert(node->child[CLD_R]->parent = node);
     }
     node_validate(node->child[CLD_L], cmp);
     node_validate(node->child[CLD_R], cmp);

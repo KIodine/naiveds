@@ -47,7 +47,7 @@ enum {
 
 #define _STMT(stmt) \
 do {                \
-    stmt            \
+    (stmt)          \
 } while (0);
 
 #define avl_tree_decl(sym, comparator)  \
@@ -66,7 +66,7 @@ _STMT(                                  \
 
 #define avl_node_init(node)                 \
 _STMT(                                      \
-    memset(node, 0, sizeof(struct avlnode));\
+    memset((node), 0, sizeof(struct avlnode));\
 )
 
 #undef _STMT
