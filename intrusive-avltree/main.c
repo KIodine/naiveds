@@ -50,7 +50,7 @@ void shuffle(int32_t *arr, size_t n){
 static
 void basic_test(void){
     avl_tree_decl(tree, pair_cmp);
-    int const N_NODES = 20;
+    int const N_NODES = 1000000;
     int ret, *narr;
     struct pair *parr, *tmp_pair, hint_pair;
     struct avlnode *tmp_node;
@@ -71,7 +71,7 @@ void basic_test(void){
         assert(ret == 0);
         //avl_print(&tree);
     }
-    avl_print(&tree);
+    //avl_print(&tree);
     avl_validate(&tree);
     printf("ok"NL);
 
@@ -85,13 +85,13 @@ void basic_test(void){
     }
     printf("ok"NL);
 
-    avl_print(&tree);
+    //avl_print(&tree);
     printf("basic delete...");
-    for (int i = 2; i < 8; ++i){
+    for (int i = 500; i < 6000; ++i){
         tmp_pair = &parr[i];
         ret = avl_delete(&tree, &tmp_pair->node);
         assert(ret == 0);
-        avl_print(&tree); printf("------------"NL);
+        //avl_print(&tree); printf("------------"NL);
     }
     avl_validate(&tree);
     //avl_print(&tree);
@@ -105,7 +105,7 @@ void basic_test(void){
 
 void torture_test(void){
     avl_tree_decl(tree, pair_cmp);
-    int fd, ret;
+    int ret; //, fd;
     int32_t *narr;
     struct pair *parr, *tmp_pair, hint_pair;
     struct avlnode *tmp_node;
@@ -155,7 +155,7 @@ void torture_test(void){
     return;
 }
 
-int main(int argc, char *argv[]){
+int main(void){
     // forces stdout flush
     setbuf(stdout, NULL);
     

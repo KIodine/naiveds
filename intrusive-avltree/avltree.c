@@ -376,7 +376,8 @@ void node_print(struct avlnode *node, int depth){
     for (int i = 0; i < depth; ++i){
         printf("    ");
     }
-    printf("[%d] <%p>"NL, node->factor, (void*)node);
+    //printf("[%d] <%p>"NL, node->factor, (void*)node);
+    printf("+-[%d]"NL, node->factor);
     node_print(node->child[CLD_L], depth + 1);
     return;
 }
