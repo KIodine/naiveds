@@ -27,7 +27,6 @@ static struct avlnode *node_min(struct avlnode *node){
     return node;
 }
 
-// FIXME: rotation is broken, seems balance factor calulation is the key.
 static void left_rotate(struct avltree *tree, struct avlnode *a){
     struct avlnode *b, *beta, *parent, **rootp;
     b      = a->child[CLD_R];
@@ -196,38 +195,22 @@ int avl_delete(struct avltree *tree, struct avlnode *node){
     struct avlnode *tmp, *parent, *fix;
     
     parent = node->parent;
-    if (node->child[CLD_L] == NULL){
-        tmp = node->child[CLD_R];
-        
+
+    if (!node->child[CLD_L] || !node->child[CLD_R]){
+        // if either side is NULL
+        tmp = node->child[CLD_R]? node->child[CLD_R]: node->child[CLD_L];
+        // `tmp` is the non-NULL side (or not if both are NULL)
+        // In this case, we just link the `tmp` with `parent`
         if (tmp){
             fix = tmp;
-            assert(fix->factor == 0);
         } else {
             fix = parent;
             if (node == fix->child[CLD_L]){
-                fix->factor += 1;
+                fix->factor++;
             } else {
-                fix->factor -= 1;
+                fix->factor--;
             }
         }
-
-    } else if (node->child[CLD_R] == NULL){
-        tmp = node->child[CLD_L];
-        
-        fix = parent;
-
-        if (tmp){
-            fix = tmp;
-            assert(fix->factor == 0);
-        } else {
-            fix = parent;
-            if (node == fix->child[CLD_L]){
-                fix->factor += 1;
-            } else {
-                fix->factor -= 1;
-            }
-        }
-
     } else {
         // 2 child case, tmp is guarenteed to be non-NULL
         tmp = node_min(node->child[CLD_R]);
@@ -272,14 +255,12 @@ int avl_delete(struct avltree *tree, struct avlnode *node){
     } else {
         tree->root = tmp;
     }
-    // do fixup
 
-    // FIXME: 
-    //      do fix if `fix->factor == 0`
-    //      keep update height until one of:
-    //      - root is reached
-    //      - proper fix is applied
-    //      - the fix node just become inbalance/skew*
+    //  do fix if `fix->factor == 0`
+    //  keep update height until one of:
+    //  - root is reached
+    //  - proper fix is applied
+    //  - the fix node just become inbalance/skew
 
     if (fix->factor != 0 && abs(fix->factor) < 2){
         return 0;
@@ -292,7 +273,6 @@ int avl_delete(struct avltree *tree, struct avlnode *node){
 
     for (;fix != NULL;){
         is_child_rotate = 0;
-        // maybe we jump to lable `update`
 
         if (fix->factor == 0){
             goto update;
@@ -332,25 +312,26 @@ int avl_delete(struct avltree *tree, struct avlnode *node){
         // since fix descended for one level, fix that
         fix = fix->parent;
         
+        // In previous version, the `is_child_rotate` flag erroneously
+        // let the `update` case breaks.
         if (!is_child_rotate){
+            // fixed pure L or R case
             break;
         }
     update:
-        // LOGIC error: the `is_child_rotate` flag erroneously let
-        // the `update` case breaks.
         if (fix->parent == NULL){
-            // fix is root or fixed pure L or R case
+            // fix is root
             break;
         }
         // after LL LR RL RR fix, the height is descended, change
         // propagates.
-        if (fix == fix->parent->child[CLD_L]){
-            fix->parent->factor += 1;
-        } else {
-            fix->parent->factor -= 1;
-        }
         child = fix;
         fix   = fix->parent;
+        if (child == fix->child[CLD_L]){
+            fix->factor++;
+        } else {
+            fix->factor--;
+        }
     }
     node->child[CLD_L] = NULL;
     node->child[CLD_R] = NULL;
@@ -376,7 +357,6 @@ void node_print(struct avlnode *node, int depth){
     for (int i = 0; i < depth; ++i){
         printf("    ");
     }
-    //printf("[%d] <%p>"NL, node->factor, (void*)node);
     printf("+-[%d]"NL, node->factor);
     node_print(node->child[CLD_L], depth + 1);
     return;
@@ -406,10 +386,10 @@ void node_validate(struct avlnode *node, avl_cmp_t cmp){
         assert(node->factor == 0);
     }
     if (node->child[CLD_L] != NULL){
-        assert(node->child[CLD_L]->parent = node);
+        assert(node->child[CLD_L]->parent == node);
     }
     if (node->child[CLD_R] != NULL){
-        assert(node->child[CLD_R]->parent = node);
+        assert(node->child[CLD_R]->parent == node);
     }
     node_validate(node->child[CLD_L], cmp);
     node_validate(node->child[CLD_R], cmp);

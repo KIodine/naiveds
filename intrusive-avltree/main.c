@@ -69,9 +69,7 @@ void basic_test(void){
         parr[i].key = narr[i];
         ret = avl_insert(&tree, &parr[i].node);
         assert(ret == 0);
-        //avl_print(&tree);
     }
-    //avl_print(&tree);
     avl_validate(&tree);
     printf("ok"NL);
 
@@ -85,16 +83,13 @@ void basic_test(void){
     }
     printf("ok"NL);
 
-    //avl_print(&tree);
     printf("basic delete...");
     for (int i = 500; i < 6000; ++i){
         tmp_pair = &parr[i];
         ret = avl_delete(&tree, &tmp_pair->node);
         assert(ret == 0);
-        //avl_print(&tree); printf("------------"NL);
     }
     avl_validate(&tree);
-    //avl_print(&tree);
     printf("ok"NL);
 
     printf("basic test done"NL);
@@ -103,9 +98,10 @@ void basic_test(void){
     return;
 }
 
+static
 void torture_test(void){
     avl_tree_decl(tree, pair_cmp);
-    int ret; //, fd;
+    int ret;
     int32_t *narr;
     struct pair *parr, *tmp_pair, hint_pair;
     struct avlnode *tmp_node;
@@ -116,11 +112,6 @@ void torture_test(void){
     for (int i = 0; i < NNUMS; ++i){
         narr[i] = i;
     }
-/*
-    fd = open("./test.bin", O_RDONLY);
-    read(fd, narr, sizeof(int32_t)*NNUMS);
-    close(fd);
-*/
     shuffle(narr, NNUMS);
 
     printf("torture insert...");
