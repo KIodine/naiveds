@@ -67,8 +67,8 @@ void basic_test(void){
     printf("basic insert...");
     for (int i = 0; i < N_NODES; ++i){
         parr[i].key = narr[i];
-        ret = avl_insert(&tree, &parr[i].node);
-        assert(ret == 0);
+        tmp_node = avl_insert(&tree, &parr[i].node);
+        assert(tmp_node == &parr[i].node);
     }
     avl_validate(&tree);
     printf("ok"NL);
@@ -86,8 +86,8 @@ void basic_test(void){
     printf("basic delete...");
     for (int i = 500; i < 6000; ++i){
         tmp_pair = &parr[i];
-        ret = avl_delete(&tree, &tmp_pair->node);
-        assert(ret == 0);
+        tmp_node = avl_delete(&tree, &tmp_pair->node);
+        assert(tmp_node == &tmp_pair->node);
     }
     avl_validate(&tree);
     printf("ok"NL);
@@ -117,7 +117,7 @@ void torture_test(void){
     printf("torture insert...");
     for (int i = 0; i < NNUMS; ++i){
         parr[i].key = narr[i];
-        ret = avl_insert(&tree, &parr[i].node);
+        tmp_node = avl_insert(&tree, &parr[i].node);
         //assert(ret == 0);
     }
     avl_validate(&tree);
@@ -134,8 +134,8 @@ void torture_test(void){
     printf("torture delete...");
     for (int i = 25; i < 3100; ++i){
         tmp_pair = &parr[i];
-        ret = avl_delete(&tree, &tmp_pair->node);
-        assert(ret == 0);
+        tmp_node = avl_delete(&tree, &tmp_pair->node);
+        assert(tmp_node == &tmp_pair->node);
     }
     avl_validate(&tree);
     printf("ok"NL);

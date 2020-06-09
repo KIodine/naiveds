@@ -89,7 +89,14 @@ static void right_rotate(struct avltree *tree, struct avlnode *a){
     return;
 }
 
-int avl_insert(struct avltree *tree, struct avlnode *node){
+/* TODO: 
+    1)  modify `avl_insert`, return the node in the intended position.
+        if the return node is the insert node, insertion is a success.
+    2)  add `avl_replace`, replacing node with prefered one, must check
+        if both can be evaluted equivalent to each other.
+    3)  add `node_clear` helper, simple piece of code for reseting node.
+*/
+struct avlnode *avl_insert(struct avltree *tree, struct avlnode *node){
     int cmpres;
     struct avlnode **tmp, **rootp, *fix = NULL;
 
@@ -110,13 +117,13 @@ int avl_insert(struct avltree *tree, struct avlnode *node){
     }
     if ((*tmp) != NULL){
         // place have been occupied
-        return -1;
+        return *tmp;
     }
     
     *tmp = node;
     if ((*tmp) == *rootp){
         // special case: insert at root
-        return 0;
+        return node;
     }
     node->parent = fix;
     
@@ -134,7 +141,7 @@ int avl_insert(struct avltree *tree, struct avlnode *node){
         fix->factor = tmp_factor;
         if (tmp_factor == 0){
             // the insertion balances the tree, bail out
-            return 0;
+            goto fix_done;
         }
         assert(tmp_factor != 0);
         if (abs(tmp_factor) < 2){
@@ -171,8 +178,8 @@ int avl_insert(struct avltree *tree, struct avlnode *node){
         // tree (but can update factor up to log n).
         break;
     }
-
-    return 0;
+fix_done:
+    return node;
 }
 
 struct avlnode *avl_get(struct avltree *tree, struct avlnode *hint){
@@ -191,7 +198,7 @@ struct avlnode *avl_get(struct avltree *tree, struct avlnode *hint){
     return res;
 }
 
-int avl_delete(struct avltree *tree, struct avlnode *node){
+struct avlnode *avl_delete(struct avltree *tree, struct avlnode *node){
     struct avlnode *tmp, *parent, *fix;
     
     parent = node->parent;
@@ -201,7 +208,7 @@ int avl_delete(struct avltree *tree, struct avlnode *node){
         tmp = node->child[CLD_R]? node->child[CLD_R]: node->child[CLD_L];
         // `tmp` is the non-NULL side (or not if both are NULL)
         // In this case, we just link the `tmp` with `parent`
-        if (tmp){
+        if (tmp != NULL){
             fix = tmp;
         } else {
             fix = parent;
@@ -263,7 +270,7 @@ int avl_delete(struct avltree *tree, struct avlnode *node){
     //  - the fix node just become inbalance/skew
 
     if (fix->factor != 0 && abs(fix->factor) < 2){
-        return 0;
+        goto delete_done;
     }
 
     struct avlnode *child = NULL;
@@ -333,14 +340,47 @@ int avl_delete(struct avltree *tree, struct avlnode *node){
             fix->factor--;
         }
     }
+delete_done:
+    /* clear attributes of node. */
     node->child[CLD_L] = NULL;
     node->child[CLD_R] = NULL;
     node->factor = 0;
     node->parent = NULL;
-    return 0;
+    return node;
+}
+
+struct avlnode *avl_replace(
+    struct avltree *tree, struct avlnode *node, struct avlnode *sub
+){
+    struct avlnode *par;
+    int dir;
+    
+    node->child[CLD_L] = sub->child[CLD_L];
+    node->child[CLD_R] = sub->child[CLD_R];
+    node->factor = sub->factor;
+    node->parent = sub->parent;
+
+    /* link parent and children. */
+    par = node->parent;
+    if (node == tree->root){
+        tree->root = node;
+    } else {
+        dir = (sub == par->child[CLD_L]);
+        par->child[dir] = node;
+    }
+
+    if (node->child[CLD_L] != NULL){
+        node->child[CLD_L]->parent = node;
+    }
+    if (node->child[CLD_R] != NULL){
+        node->child[CLD_R]->parent = node;
+    }
+
+    return node;
 }
 
 
+/* TODO: move these function to `avldbg.c`. */
 void avl_print(struct avltree *tree){
     putchar('\n');
     node_print(tree->root, 0);
