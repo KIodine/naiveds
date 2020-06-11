@@ -1,13 +1,13 @@
 #include "avltree.h"
+#include "avlinc.h"
 
 static inline int max(int a, int b);
 static inline int min(int a, int b);
+static inline void node_clear(struct avlnode *node);
 static struct avlnode *node_min(struct avlnode *node);
 static void left_rotate(struct avltree *tree, struct avlnode *a);
 static void right_rotate(struct avltree *tree, struct avlnode *a);
 
-static void node_print(struct avlnode *node, int depth);
-static void node_validate(struct avlnode *node, avl_cmp_t cmp);
 
 static inline int max(int a, int b){
     return (a > b)? a: b;
@@ -15,6 +15,12 @@ static inline int max(int a, int b){
 
 static inline int min(int a, int b){
     return (b > a)? a: b;
+}
+
+static inline
+void node_clear(struct avlnode *node){
+    memset(node, 0, sizeof(struct avlnode));
+    return;
 }
 
 static struct avlnode *node_min(struct avlnode *node){
@@ -342,10 +348,7 @@ struct avlnode *avl_delete(struct avltree *tree, struct avlnode *node){
     }
 delete_done:
     /* clear attributes of node. */
-    node->child[CLD_L] = NULL;
-    node->child[CLD_R] = NULL;
-    node->factor = 0;
-    node->parent = NULL;
+    node_clear(node);
     return node;
 }
 
@@ -375,63 +378,9 @@ struct avlnode *avl_replace(
     if (node->child[CLD_R] != NULL){
         node->child[CLD_R]->parent = node;
     }
-
-    return node;
-}
-
-
-/* TODO: move these function to `avldbg.c`. */
-void avl_print(struct avltree *tree){
-    putchar('\n');
-    node_print(tree->root, 0);
-    return;
-}
-
-#define NL "\n"
-static
-void node_print(struct avlnode *node, int depth){
-    if (node == NULL){
-        return;
-    }
-    node_print(node->child[CLD_R], depth + 1);
-    for (int i = 0; i < depth; ++i){
-        printf("    ");
-    }
-    printf("+-[%d]"NL, node->factor);
-    node_print(node->child[CLD_L], depth + 1);
-    return;
-}
-#undef NL
-
-void avl_validate(struct avltree *tree){
-    node_validate(tree->root, tree->cmp);
-    return;
-}
-
-static
-void node_validate(struct avlnode *node, avl_cmp_t cmp){
-    int res;
-    if (node == NULL){
-        return;
-    }
-    // AVL basic property
-    assert(abs(node->factor) < 2);
-    // BST basic property
-    if (node->child[CLD_L] && node->child[CLD_R]){
-        res = cmp(node->child[CLD_L], node->child[CLD_R]);
-        assert(res < 0);
-    }
-    // more strict basic attribute test
-    if (!node->child[CLD_L] && !node->child[CLD_R]){
-        assert(node->factor == 0);
-    }
-    if (node->child[CLD_L] != NULL){
-        assert(node->child[CLD_L]->parent == node);
-    }
-    if (node->child[CLD_R] != NULL){
-        assert(node->child[CLD_R]->parent == node);
-    }
-    node_validate(node->child[CLD_L], cmp);
-    node_validate(node->child[CLD_R], cmp);
-    return;
+    
+    /* Remove any identity of subject. */
+    node_clear(sub);
+    
+    return sub;
 }

@@ -1,11 +1,7 @@
 #ifndef AVLTREE_H
 #define AVLTREE_H
 
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
 #include <stddef.h>
 
 // copy from <linux/kernel.h> and strip debug stuffs.

@@ -1,9 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <stdint.h>
 #include <unistd.h>
+#include <assert.h>
 #include <fcntl.h>
+
 #include "avltree.h"
+#include "avldbg.h"
 
 #define NL "\n"
 #define NNUMS 4096
@@ -51,7 +54,7 @@ static
 void basic_test(void){
     avl_tree_decl(tree, pair_cmp);
     int const N_NODES = 1000000;
-    int ret, *narr;
+    int *narr;
     struct pair *parr, *tmp_pair, hint_pair;
     struct avlnode *tmp_node;
     
@@ -101,7 +104,6 @@ void basic_test(void){
 static
 void torture_test(void){
     avl_tree_decl(tree, pair_cmp);
-    int ret;
     int32_t *narr;
     struct pair *parr, *tmp_pair, hint_pair;
     struct avlnode *tmp_node;

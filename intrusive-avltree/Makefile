@@ -4,9 +4,10 @@ CFLAGS := -g -O0 -Wall -Wextra
 VG := valgrind
 VGFLAGS := --show-leak-kinds=all --leak-check=full --verbose
 
-OBJS := main.o avltree.o
+OBJS := main.o avltree.o avldbg.o
 BIN := ./avltest
 
+# TODO: more seperate build enviroment.
 
 .PHONY: debug check clean clean_all
 
