@@ -1,9 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <stdint.h>
 #include <unistd.h>
+#include <assert.h>
 #include <fcntl.h>
+
 #include "avltree.h"
+#include "avldbg.h"
 
 #define NL "\n"
 #define NNUMS 4096
@@ -51,7 +54,7 @@ static
 void basic_test(void){
     avl_tree_decl(tree, pair_cmp);
     int const N_NODES = 1000000;
-    int ret, *narr;
+    int *narr;
     struct pair *parr, *tmp_pair, hint_pair;
     struct avlnode *tmp_node;
     
@@ -67,8 +70,8 @@ void basic_test(void){
     printf("basic insert...");
     for (int i = 0; i < N_NODES; ++i){
         parr[i].key = narr[i];
-        ret = avl_insert(&tree, &parr[i].node);
-        assert(ret == 0);
+        tmp_node = avl_insert(&tree, &parr[i].node);
+        assert(tmp_node == &parr[i].node);
     }
     avl_validate(&tree);
     printf("ok"NL);
@@ -86,8 +89,8 @@ void basic_test(void){
     printf("basic delete...");
     for (int i = 500; i < 6000; ++i){
         tmp_pair = &parr[i];
-        ret = avl_delete(&tree, &tmp_pair->node);
-        assert(ret == 0);
+        tmp_node = avl_delete(&tree, &tmp_pair->node);
+        assert(tmp_node == &tmp_pair->node);
     }
     avl_validate(&tree);
     printf("ok"NL);
@@ -101,7 +104,6 @@ void basic_test(void){
 static
 void torture_test(void){
     avl_tree_decl(tree, pair_cmp);
-    int ret;
     int32_t *narr;
     struct pair *parr, *tmp_pair, hint_pair;
     struct avlnode *tmp_node;
@@ -117,7 +119,7 @@ void torture_test(void){
     printf("torture insert...");
     for (int i = 0; i < NNUMS; ++i){
         parr[i].key = narr[i];
-        ret = avl_insert(&tree, &parr[i].node);
+        tmp_node = avl_insert(&tree, &parr[i].node);
         //assert(ret == 0);
     }
     avl_validate(&tree);
@@ -134,8 +136,8 @@ void torture_test(void){
     printf("torture delete...");
     for (int i = 25; i < 3100; ++i){
         tmp_pair = &parr[i];
-        ret = avl_delete(&tree, &tmp_pair->node);
-        assert(ret == 0);
+        tmp_node = avl_delete(&tree, &tmp_pair->node);
+        assert(tmp_node == &tmp_pair->node);
     }
     avl_validate(&tree);
     printf("ok"NL);
