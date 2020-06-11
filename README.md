@@ -9,9 +9,10 @@ A practice to some of the most basic data structures, including:
     - [X] binary search tree
     - [X] red-black tree
     - [X] intrusive rbtree
-    - [ ] AVL tree
+    - [X] AVL tree
+    - [X] intrusive AVL tree
 - heap
     - [X] binary heap
 - hash table
-    - [ ] chained approach
+    - [X] chained approach
     - [ ] open addressing approach

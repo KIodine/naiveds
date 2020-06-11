@@ -3,45 +3,59 @@
 
 
 void list_push(struct list *head, struct list *node){
-    node->next = head->next;
+    struct list *hnxt;
+    hnxt = head->next;
+
+    node->next = hnxt;
     node->prev = head;
-    head->next->prev = node;
+    hnxt->prev = node;
     head->next = node;
     return;
 }
 
 struct list *list_pop(struct list *head){
-    struct list *tmp;
+    struct list *tmp, *tnxt;
     if (list_is_empty(head)) return NULL;
     tmp = head->next;
-    head->next = tmp->next;
-    tmp->next->prev = head;
-    tmp->next = NULL;
-    tmp->prev = NULL;
+    tnxt = tmp->next;
+    
+    head->next = tnxt;
+    tnxt->prev = head;
+    tmp->next  = tmp;
+    tmp->prev  = tmp;
     return tmp;
 }
 
 void list_append(struct list *head, struct list *node){
-    node->prev = head->prev;
+    struct list *hprv;
+    hprv = head->prev;
+
+    node->prev = hprv;
     node->next = head;
-    head->prev->next = node;
+    hprv->next = node;
     head->prev = node;
     return;
 }
 
 struct list *list_get(struct list *head){
-    struct list *tmp;
+    struct list *tmp, *tprv;
     if (list_is_empty(head)) return NULL;
     tmp = head->prev;
-    head->prev = tmp->prev;
-    tmp->prev->next = head;
-    tmp->next = NULL;
-    tmp->prev = NULL;
+    tprv = tmp->prev;
+    
+    head->prev = tprv;
+    tprv->next = head;
+    tmp->next  = tmp;
+    tmp->prev  = tmp;
     return tmp;
 }
 
 void list_delete(struct list *node){
-    node->prev->next = node->next;
-    node->next->prev = node->prev;
+    struct list *nprv, *nnxt;
+    nprv = node->prev;
+    nnxt = node->next;
+    nprv->next = nnxt;
+    nnxt->prev = nprv;
+    node->prev = node->next = node;
     return;
 }

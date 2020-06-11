@@ -12,13 +12,13 @@ all: ${OBJS}
 	${CC} ${CFLAGS} -o ${BIN} ${OBJS}
 
 test: all
-	${BIN}
+	./${BIN}
 
 %.o: %.c
 	${CC} ${CFLAGS} -c $< -o $@
 
 check: all
-	${VG} ${VGFLAGS} ${BIN}
+	${VG} ${VGFLAGS} ./${BIN}
 
 clean:
 	rm -rf ${OBJS}
