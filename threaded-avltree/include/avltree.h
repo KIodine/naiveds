@@ -67,17 +67,27 @@ struct avltree (sym) = {                \
     .count  = 0,                        \
 }
 
-#define avl_tree_init(tree, comparator) \
-_STMT(                                  \
-    (tree)->root    = NULL;             \
-    (tree)->cmp     = &(cmparator);     \
-    (tree)->count   = 0;                \
-)
+static inline void avl_tree_init(struct avltree *tree, avl_cmp_t cmp){
+    tree->root  = NULL;
+    tree->cmp   = cmp;
+    tree->count = 0;
+    tree->head.prev = &tree->head;
+    tree->head.next = &tree->head;
+    return;
+};
 
 #define avl_node_init(node)                 \
 _STMT(                                      \
     memset((node), 0, sizeof(struct avlnode));\
 )
+
+static inline struct avlnode *avl_get_min(struct avltree *tree){
+    return container_of(tree->head.next, struct avlnode, node);
+}
+
+static inline struct avlnode *avl_get_max(struct avltree *tree){
+    return container_of(tree->head.prev, struct avlnode, node);
+}
 
 
 struct avlnode *avl_insert(struct avltree *tree, struct avlnode *node);
@@ -87,8 +97,5 @@ struct avlnode *avl_replace(
     struct avltree *tree, struct avlnode *node, struct avlnode *sub
 );
 
-// debug use
-void avl_print(struct avltree *tree);
-void avl_validate(struct avltree *tree);
 
 #endif /* AVLTREE_H */

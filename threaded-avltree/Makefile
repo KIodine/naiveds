@@ -23,7 +23,7 @@ LIBDIR := lib
 BINDIR := bin
 
 # Put all source files here, mind dependencies.
-SRCFILES := avltree.c
+SRCFILES := avltree.c list.c
 DBGFILES := avldbg.c
 TSTFILES := main.c
 
@@ -67,10 +67,10 @@ $(OBJDIR):
 
 
 # makefile static-patterns.
-$(OBJLIST): $(OBJDIR)/%.o: $(SRCDIR)/%.c
+$(OBJLIST): $(OBJDIR)/%.o: $(SRCDIR)/%.c $(INCDIR)/avltree.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(DBGOBJLIST): $(OBJDIR)/%.o: $(SRCDIR)/%.c
+$(DBGOBJLIST): $(OBJDIR)/%.o: $(SRCDIR)/%.c $(INCDIR)/avldbg.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(TSTOBJLIST): $(OBJDIR)/%.o: $(TSTDIR)/%.c
@@ -87,7 +87,7 @@ shared: $(LIBSHAREDDST)
 # Using `target-specific variables`.
 $(LIBSHAREDDST): CFLAGS += -fPIC
 $(LIBSHAREDDST): $(OBJLIST)
-	$(CC) $(CFLAGS) -shared -o $(LIBSHAREDDST) $<
+	$(CC) $(CFLAGS) -shared -o $(LIBSHAREDDST) $^
 
 # or `-Wl,rpath <dir>` can make the produced ELF using shared library?
 # NOTE: This will make the ELF search for the libdir of project as a static

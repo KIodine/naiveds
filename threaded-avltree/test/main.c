@@ -51,13 +51,16 @@ void shuffle(int32_t *arr, size_t n){
 }
 
 static
-void basic_test(void){
-    avl_tree_decl(tree, pair_cmp);
-    int const N_NODES = 1000000;
+void do_test(void){
+    //avl_tree_decl(tree, pair_cmp);
+    struct avltree tree;
+    int const N_NODES = 100000;
     int *narr;
     struct pair *parr, *tmp_pair, hint_pair;
     struct avlnode *tmp_node;
     
+    avl_tree_init(&tree, pair_cmp);
+
     memset(&hint_pair.node, 0, sizeof(struct avlnode));
     parr = calloc(N_NODES, sizeof(struct pair));
     
@@ -67,7 +70,7 @@ void basic_test(void){
     }
     shuffle(narr, N_NODES);
 
-    printf("basic insert...");
+    printf("test insert...");
     for (int i = 0; i < N_NODES; ++i){
         parr[i].key = narr[i];
         tmp_node = avl_insert(&tree, &parr[i].node);
@@ -76,7 +79,7 @@ void basic_test(void){
     avl_validate(&tree);
     printf("ok"NL);
 
-    printf("basic get...");
+    printf("test get...");
     for (int i = 0; i < N_NODES; ++i){
         hint_pair.key = narr[i];
         tmp_node = avl_get(&tree, &hint_pair.node);
@@ -86,7 +89,7 @@ void basic_test(void){
     }
     printf("ok"NL);
 
-    printf("basic delete...");
+    printf("test delete...");
     for (int i = 500; i < 6000; ++i){
         tmp_pair = &parr[i];
         tmp_node = avl_delete(&tree, &tmp_pair->node);
@@ -95,64 +98,15 @@ void basic_test(void){
     avl_validate(&tree);
     printf("ok"NL);
 
-    printf("basic test done"NL);
+    printf("Function test done"NL);
     free(parr);
     free(narr);
-    return;
-}
-
-static
-void torture_test(void){
-    avl_tree_decl(tree, pair_cmp);
-    int32_t *narr;
-    struct pair *parr, *tmp_pair, hint_pair;
-    struct avlnode *tmp_node;
-
-    parr = calloc(NNUMS, sizeof(struct pair));
-    narr = malloc(sizeof(int32_t)*NNUMS);
-    
-    for (int i = 0; i < NNUMS; ++i){
-        narr[i] = i;
-    }
-    shuffle(narr, NNUMS);
-
-    printf("torture insert...");
-    for (int i = 0; i < NNUMS; ++i){
-        parr[i].key = narr[i];
-        tmp_node = avl_insert(&tree, &parr[i].node);
-        //assert(ret == 0);
-    }
-    avl_validate(&tree);
-    printf("ok"NL);
-
-    printf("torture get...");
-    for (int i = 0; i < NNUMS; ++i){
-        hint_pair.key = narr[i];
-        tmp_node = avl_get(&tree, &hint_pair.node);
-        assert(tmp_node != NULL);
-    }
-    printf("ok"NL);
-
-    printf("torture delete...");
-    for (int i = 25; i < 3100; ++i){
-        tmp_pair = &parr[i];
-        tmp_node = avl_delete(&tree, &tmp_pair->node);
-        assert(tmp_node == &tmp_pair->node);
-    }
-    avl_validate(&tree);
-    printf("ok"NL);
-
-    free(narr);
-    free(parr);
-
     return;
 }
 
 int main(void){
     // forces stdout flush
     setbuf(stdout, NULL);
-    
-    basic_test();
-    torture_test();
+    do_test();
     return 0;
 }

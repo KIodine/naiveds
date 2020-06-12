@@ -217,6 +217,9 @@ struct avlnode *avl_delete(struct avltree *tree, struct avlnode *node){
     
     parent = node->parent;
 
+    /* Simply remove it. */
+    list_delete(&node->node);
+
     if (!node->child[CLD_L] || !node->child[CLD_R]){
         // if either side is NULL
         tmp = node->child[CLD_R]? node->child[CLD_R]: node->child[CLD_L];
@@ -364,6 +367,7 @@ struct avlnode *avl_replace(
     struct avltree *tree, struct avlnode *node, struct avlnode *sub
 ){
     struct avlnode *par;
+    struct list *prev, *next;
     int dir;
     
     node->child[CLD_L] = sub->child[CLD_L];
@@ -387,6 +391,14 @@ struct avlnode *avl_replace(
         node->child[CLD_R]->parent = node;
     }
     
+    prev = sub->node.prev;
+    next = sub->node.next;
+    
+    node->node.prev = prev;
+    node->node.next = next;
+    prev->next = &node->node;
+    next->prev = &node->node;
+
     /* Remove any identity of subject. */
     node_clear(sub);
     
