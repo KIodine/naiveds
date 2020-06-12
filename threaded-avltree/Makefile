@@ -65,12 +65,13 @@ $(OBJLIST) $(TSTOBJLIST) $(DBGOBJLIST): |$(OBJDIR)
 $(OBJDIR):
 	mkdir -p ./$(LIBDIR) ./$(OBJDIR) ./$(BINDIR)
 
-
+# Setup build flag for each set of object.
 # makefile static-patterns.
-$(OBJLIST): $(OBJDIR)/%.o: $(SRCDIR)/%.c $(INCDIR)/avltree.h
+# target-specific variable also apply to static-patterns.
+$(OBJLIST): $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(DBGOBJLIST): $(OBJDIR)/%.o: $(SRCDIR)/%.c $(INCDIR)/avldbg.h
+$(DBGOBJLIST): $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(TSTOBJLIST): $(OBJDIR)/%.o: $(TSTDIR)/%.c
@@ -93,9 +94,6 @@ $(LIBSHAREDDST): $(OBJLIST)
 # NOTE: This will make the ELF search for the libdir of project as a static
 # target, the executable will not work anywhere besides the place it built.
 # NOTE: If a prerequisite is a target, it will be execute anyway?
-#buildtest: $(DBGOBJLIST) $(TSTOBJLIST) $(LIBSHAREDDST)
-#	$(CC) $(CFLAGS) -L./$(LIBDIR) -o $(BINDST) \
-#	$(DBGOBJLIST) $(TSTOBJLIST) -Wl,-rpath,$(LIBDIR) -l$(PROJ_NAME)
 
 $(BINDST): $(DBGOBJLIST) $(TSTOBJLIST) $(LIBSHAREDDST)
 	$(CC) $(CFLAGS) -L./$(LIBDIR) -o $@ \
@@ -119,3 +117,18 @@ clean:
 clean_all: clean
 	rm -f ./$(LIBSTATICDST) ./$(LIBSHAREDDST)
 	rm -f ./$(BINDST)
+
+# TODO: Put object header deps.
+#	Get deps of a src using `cc -MM -I./include src/*
+#	Add obj lists.
+# NOTE: How do make treat these rules that already had more explicit
+#	target?
+#	-> See 4.11 Multiple Rules For One Target
+#	   In short, make merges additional rules into a target.
+
+# --- Complete dependencies. ---
+obj/avldbg.o: src/avldbg.c include/avldbg.h include/avltree.h include/list.h \
+ include/list.h
+obj/avltree.o: src/avltree.c include/avltree.h include/list.h \
+ include/avlinc.h
+obj/list.o: src/list.c include/list.h
