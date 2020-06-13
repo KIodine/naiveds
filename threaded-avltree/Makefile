@@ -23,19 +23,14 @@ LIBDIR := lib
 BINDIR := bin
 
 # Put all source files here, mind dependencies.
-SRCFILES := avltree.c list.c
-DBGFILES := avldbg.c
-TSTFILES := main.c
+LIBOBJS := avltree.o list.o
+DBGOBJS := avldbg.o
+TSTOBJS := main.o
 
 # --- imm targets to build ---
-SRCLIST := $(addprefix $(SRCDIR)/,$(SRCFILES))
-OBJLIST := $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(SRCFILES)))
-
-TSTLIST := $(addprefix $(TSTDIR)/,$(TSTFILES))
-TSTOBJLIST := $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(TSTFILES)))
-
-DBGLIST := $(addprefix $(SRCDIR)/,$(DBGFILES))
-DBGOBJLIST := $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(DBGFILES)))
+LIBOBJDST := $(addprefix $(OBJDIR)/,$(LIBOBJS))
+DBGOBJDST := $(addprefix $(OBJDIR)/,$(DBGOBJS))
+TSTOBJDST := $(addprefix $(OBJDIR)/,$(TSTOBJS))
 # --- end of imm targets ---
 
 LIBSTATIC := $(LIB_BASENAME).a
@@ -61,33 +56,35 @@ all: static shared buildtest
 
 
 # make directory before all starts.
-$(OBJLIST) $(TSTOBJLIST) $(DBGOBJLIST): |$(OBJDIR)
+$(LIBOBJDST) $(TSTOBJDST) $(DBGOBJDST): |$(OBJDIR)
 $(OBJDIR):
 	mkdir -p ./$(LIBDIR) ./$(OBJDIR) ./$(BINDIR)
 
+# --- start build obj groups ---
 # Setup build flag for each set of object.
 # makefile static-patterns.
 # target-specific variable also apply to static-patterns.
-$(OBJLIST): $(OBJDIR)/%.o: $(SRCDIR)/%.c
+$(LIBOBJDST): $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(DBGOBJLIST): $(OBJDIR)/%.o: $(SRCDIR)/%.c
+$(DBGOBJDST): $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(TSTOBJLIST): $(OBJDIR)/%.o: $(TSTDIR)/%.c
+$(TSTOBJDST): $(OBJDIR)/%.o: $(TSTDIR)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
+# --- end build obj groups ---
 
 # NOTE: If you want to be able to build static and shared library seperately,
 #	using the file itself as target, so the other targets depend on library
 #	wouldn't build library as the target has been invoked.
 static: $(LIBSTATICDST)
-$(LIBSTATICDST): $(OBJLIST)
+$(LIBSTATICDST): $(LIBOBJDST)
 	$(AR) $(ARFLAGS) $(LIBSTATICDST) $<
 
 shared: $(LIBSHAREDDST)
 # Using `target-specific variables`.
 $(LIBSHAREDDST): CFLAGS += -fPIC
-$(LIBSHAREDDST): $(OBJLIST)
+$(LIBSHAREDDST): $(LIBOBJDST)
 	$(CC) $(CFLAGS) -shared -o $(LIBSHAREDDST) $^
 
 # or `-Wl,rpath <dir>` can make the produced ELF using shared library?
@@ -95,9 +92,9 @@ $(LIBSHAREDDST): $(OBJLIST)
 # target, the executable will not work anywhere besides the place it built.
 # NOTE: If a prerequisite is a target, it will be execute anyway?
 
-$(BINDST): $(DBGOBJLIST) $(TSTOBJLIST) $(LIBSHAREDDST)
+$(BINDST): $(DBGOBJDST) $(TSTOBJDST) $(LIBSHAREDDST)
 	$(CC) $(CFLAGS) -L./$(LIBDIR) -o $@ \
-	$(DBGOBJLIST) $(TSTOBJLIST) -Wl,-rpath,$(LIBDIR) -l$(PROJ_NAME)
+	$(DBGOBJDST) $(TSTOBJDST) -Wl,-rpath,$(LIBDIR) -l$(PROJ_NAME)
 buildtest: $(BINDST)
 
 runtest: buildtest
@@ -110,9 +107,9 @@ syntaxcheck:
 	$(CC) -fsyntax-only $(CFLAGS) $(INCDIR)/* $(SRCDIR)/*
 
 clean:
-	rm -f $(OBJLIST)
-	rm -f $(TSTOBJLIST)
-	rm -f $(DBGOBJLIST)
+	rm -f $(LIBOBJDST)
+	rm -f $(TSTOBJDST)
+	rm -f $(DBGOBJDST)
 
 clean_all: clean
 	rm -f ./$(LIBSTATICDST) ./$(LIBSHAREDDST)
