@@ -1,10 +1,12 @@
 CC := cc
 AR := ar
 
+# Flags when building shared object.
+LDFLAGS = -Wl,--version-script=$(CFGDIR)/version.lds
+
 CFLAGS := -Wall -Wextra -std=c99
-# Disable warn caused by disabling `assert` and similar stuff.
-REL_NO_WARN := -Wno-unused-parameter -Wno-unused-but-set-variable
-RELFLAGS := -O2 -DNDEBUG $(REL_NO_WARN)
+REL_NOWARN := -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter
+RELFLAGS := -O2 -DNDEBUG $(REL_NOWARN)
 DBGFLAGS := -g -O0
 
 ARFLAGS := -rcs
@@ -23,6 +25,7 @@ TSTDIR := test
 OBJDIR := obj
 LIBDIR := lib
 BINDIR := bin
+CFGDIR := cfg
 
 # Put all source files here, mind dependencies.
 LIBOBJS := avltree.o list.o
@@ -81,13 +84,13 @@ $(TSTOBJDST): $(OBJDIR)/%.o: $(TSTDIR)/%.c
 #	wouldn't build library as the target has been invoked.
 static: $(LIBSTATICDST)
 $(LIBSTATICDST): $(LIBOBJDST)
-	$(AR) $(ARFLAGS) $(LIBSTATICDST) $<
+	$(AR) $(ARFLAGS) $(LIBSTATICDST) $^
 
 shared: $(LIBSHAREDDST)
 # Using `target-specific variables`.
 $(LIBSHAREDDST): CFLAGS += -fPIC
 $(LIBSHAREDDST): $(LIBOBJDST)
-	$(CC) $(CFLAGS) -shared -o $(LIBSHAREDDST) $^
+	$(CC) $(CFLAGS) $(LDFLAGS) -shared -o $(LIBSHAREDDST) $^
 
 # or `-Wl,rpath <dir>` can make the produced ELF using shared library?
 # NOTE: This will make the ELF search for the libdir of project as a static
