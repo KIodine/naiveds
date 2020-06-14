@@ -95,13 +95,6 @@ static void right_rotate(struct avltree *tree, struct avlnode *a){
     return;
 }
 
-/* TODO: 
-    1)  modify `avl_insert`, return the node in the intended position.
-        if the return node is the insert node, insertion is a success.
-    2)  add `avl_replace`, replacing node with prefered one, must check
-        if both can be evaluted equivalent to each other.
-    3)  add `node_clear` helper, simple piece of code for reseting node.
-*/
 struct avlnode *avl_insert(struct avltree *tree, struct avlnode *node){
     int cmpres;
     struct avlnode **tmp, **rootp, *fix = NULL;

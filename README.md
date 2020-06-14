@@ -1,18 +1,22 @@
 # NAIVEDS - naive data structures
+
+WARN: This repository include some experimental stuff, use with caution.
+
 A practice to some of the most basic data structures, including:
 - linked list
-    - [X] singly linked list
-    - [X] doubly linked list
-    - [X] circular linked list
-    - [X] intrusive doubly linked list
+    - [X] Singly linked list
+    - [X] Doubly linked list
+    - [X] Circular linked list
+    - [X] Intrusive doubly linked list
 - tree
-    - [X] binary search tree
-    - [X] red-black tree
-    - [X] intrusive rbtree
+    - [X] Binary search tree
+    - [X] Red-black tree
+    - [X] Intrusive rbtree
     - [X] AVL tree
-    - [X] intrusive AVL tree
+    - [X] Intrusive AVL tree
+    - [X] Threaded AVL tree
 - heap
-    - [X] binary heap
+    - [X] Binary heap
 - hash table
-    - [X] chained approach
+    - [X] Chained approach
     - [ ] open addressing approach
