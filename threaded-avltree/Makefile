@@ -2,7 +2,9 @@ CC := cc
 AR := ar
 
 CFLAGS := -Wall -Wextra -std=c99
-RELFLAGS := -O1
+# Disable warn caused by disabling `assert` and similar stuff.
+REL_NO_WARN := -Wno-unused-parameter -Wno-unused-but-set-variable
+RELFLAGS := -O2 -DNDEBUG $(REL_NO_WARN)
 DBGFLAGS := -g -O0
 
 ARFLAGS := -rcs
