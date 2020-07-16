@@ -38,7 +38,7 @@ static
 void shuffle(int32_t *arr, size_t n){
     unsigned int i_excg, tmp;
     srand(9997);
-    // for test usage, this produces same psuedo random every time.
+    /* for test purpose, this produces same result every time. */
     for (size_t i = 0; i < n; ++i){
         i_excg = rand();
         i_excg %= n;

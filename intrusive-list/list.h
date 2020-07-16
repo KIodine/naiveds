@@ -16,6 +16,12 @@ struct list {
 #define list_decl(ident) struct list ident = {&(ident), &(ident)}
 #define list_is_empty(node) ((node)->prev == (node))
 
+/*
+             get <-|      |<- push
+(prev) ... -------- [head] -------> ... (next)
+          append ->|      |-> pop
+*/
+
 void         list_push(struct list *head, struct list *node);
 struct list *list_pop(struct list *head);
 void         list_append(struct list *head, struct list *node);
