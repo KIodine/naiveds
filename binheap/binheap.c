@@ -18,6 +18,7 @@ static void heap_grow(struct maxheap *heap){
 
 void maxheapify(int *arr, unsigned int len){
     int parent, tmp;
+    /* for every node: if node > parent, swap(node, parent) */
     for (int i = len; i > 1; --i){
         parent = (i >> 1);
         if (arr[i-1] > arr[parent-1]){
@@ -52,23 +53,23 @@ void maxheap_purge(struct maxheap *heap){
 }
 
 int maxheap_insert(struct maxheap *heap, int val){
-    int index, parent, tmp, *arr;
-    index = heap->count++;
+    int cur, parent, tmp, *arr;
+    cur = heap->count++;
     /* TODO: grow if required */
     if (heap->capacity <= heap->count){
         heap_grow(heap);
     }
     arr = heap->arr;
-    arr[index] = val;
-    index++;
+    arr[cur] = val;
+    cur++;
     for (;;){
-        parent = index >> 1;
+        parent = cur >> 1;
         if (parent == 0){ break;}
-        if (arr[parent-1] < arr[index-1]){
-            tmp           = arr[index-1];
-            arr[index-1]  = arr[parent-1];
+        if (arr[parent-1] < arr[cur-1]){
+            tmp           = arr[cur-1];
+            arr[cur-1]  = arr[parent-1];
             arr[parent-1] = tmp;
-            index = parent;
+            cur = parent;
         } else {
             break;
         }
@@ -83,17 +84,31 @@ int maxheap_peek(struct maxheap *heap, int *res){
 }
 
 int maxheap_extract(struct maxheap *heap, int *res){
-    int index = 1, child, tmp, *arr;
-    if (heap->count == 0){ return MAXHEAP_NOELEM;};
+    int cur = 1, child, tmp, *arr;
+    
+    if (heap->count == 0){
+        return MAXHEAP_NOELEM;
+    };
     arr = heap->arr;
-    *res = arr[0];
+
+    /* swap first and last. */
+    *res   = arr[0];
     arr[0] = arr[heap->count-1];
+    arr[heap->count-1] = *res;
+    
     heap->count -= 1;
+    
+    /* Sift down method. */
     for (;;){
-        child = index << 1;
-        if (child > heap->count){ break;}
+        child = cur << 1;
+        if (child >= heap->count){
+            /* out-of-range. */
+            break;
+        }
+        assert(child < heap->count);
+        
         /* switch if parent is smaller than one of its children */
-        if (arr[index-1] > arr[child-1] && arr[index-1] > arr[child]){
+        if (arr[cur-1] > arr[child-1] && arr[cur-1] > arr[child]){
             /* We've moved the element to the right place */
             break;
         }
@@ -101,10 +116,12 @@ int maxheap_extract(struct maxheap *heap, int *res){
             /* if left gt right */
             child += 1;
         }
+        /* do swap. */
         tmp          = arr[child-1];
-        arr[child-1] = arr[index-1];
-        arr[index-1] = tmp;
-        index = child;
+        arr[child-1] = arr[cur-1];
+        arr[cur-1] = tmp;
+        /* cur move on. */
+        cur = child;
     }
     return MAXHEAP_OK;
 }

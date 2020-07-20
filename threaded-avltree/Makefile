@@ -129,6 +129,7 @@ clean_all: clean
 #	   In short, make merges additional rules into a target.
 
 # --- Complete dependencies. ---
+# Invoke `gcc -MM <srcs,...>` to generate target dependencies.
 obj/avldbg.o: src/avldbg.c include/avldbg.h include/avltree.h include/list.h \
  include/list.h
 obj/avltree.o: src/avltree.c include/avltree.h include/list.h \
