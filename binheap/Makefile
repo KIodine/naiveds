@@ -31,7 +31,7 @@ runtest: buildtest
 	./${BIN}
 
 runcheck: buildtest
-	${VG} ${VGFLAGS} ${BIN}
+	${VG} ${VGFLAGS} ./${BIN}
 
 clean:
 	rm -rf ${OBJS}

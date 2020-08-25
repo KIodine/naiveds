@@ -1,4 +1,6 @@
 #include <assert.h>
+#include <stdlib.h>
+
 
 #include "binheap.h"
 
@@ -33,7 +35,7 @@ int get_last_parent(int len){
 }
 
 static inline
-void sift_up(int *arr, int cur, int len){
+void sift_up(int *arr, int cur){
     int parent, tmp;
 
     for (; cur != 0;){
@@ -47,7 +49,7 @@ void sift_up(int *arr, int cur, int len){
             break;
         }
         /* Ensure the procedure ends eventually. */
-        assert(cur < parent);
+        assert(cur > parent);
         cur = parent;
     }
 
@@ -107,4 +109,72 @@ void maxheapify(int *arr, int len){
     }
     return;
 }
+
+struct binheap *binheap_alloc(size_t cap){
+    struct binheap *heap;
+    int *arr;
+
+    heap = calloc(1, sizeof(struct binheap));
+    if (heap == NULL){
+        goto heap_alloc_fail;
+    }
+    arr = calloc(1, sizeof(int)*cap);
+    if (arr == NULL){
+        goto arr_alloc_fail;
+    }
+
+    heap->arr      = arr;
+    heap->count    = 0;
+    heap->capacity = cap;
+
+    return heap;
+    /* Error handling section. */
+arr_alloc_fail:
+    free(heap);
+heap_alloc_fail:
+    return NULL;
+}
+
+void binheap_free(struct binheap *heap){
+    free(heap->arr);
+    free(heap);
+    return;
+}
+
+int binheap_insert(struct binheap *heap, int val){
+    int cur;
+
+    if (heap->count >= heap->capacity){
+        return -1;
+    }
+
+    cur = heap->count;
+    heap->arr[cur] = val;
+    heap->count   += 1;
+    
+    sift_up(heap->arr, cur);
+
+    return 0;
+}
+
+
+int binheap_extract(struct binheap *heap, int *res){
+    int cur;
+
+    if (heap->count == 0 || res == NULL){
+        return -1;
+    }
+
+    cur = heap->count;
+
+    /* Return max value and subst with last value in heap. */
+    *res = heap->arr[0];
+    heap->arr[0] = heap->arr[cur-1];
+    heap->count -= 1;
+
+    sift_down(heap->arr, 0, heap->count);
+
+    return 0;
+}
+
 // TODO
