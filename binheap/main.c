@@ -1,86 +1,88 @@
 #include <stdio.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdint.h>
+#include <stdlib.h>
+#include <assert.h>
 
 #include "binheap.h"
 
+#define ARRSZ(array) ((sizeof(array))/sizeof(array[0]))
 
-#define NL "\n"
-#define N_INT32 1048576
+#define RESET "\e[0m"
+#define REDTEXT "\e[31m"
 
-char *testfile = "./testint.bin";
+#define HEAPSZ 8192
 
 
+int arr[] = {
+    1, 2, 3, 4, 5, 6, 7, 8
+};
 
-void basic_test(void){
-    /*
-     * Alloc heap
-     * insert random numbers
-     * extract until empty
-     * insert random numbers
-     * purge
-     * insert random numbers
-     * extract until empty
-     * free
-     */
-    struct maxheap *heap;
-    int ret, res;
-
-    heap =  maxheap_alloc();
-    for (int i = 0; i < 32; ++i){
-        maxheap_insert(heap, i);
+/* --- util routines --- */
+static
+void verify_maxheap(int *arr, int len){
+    int cur = (len - 1) >> 1, parent;
+    
+    if (len == 0){
+        return;
     }
-    for (;(ret = maxheap_extract(heap, &res)) != MAXHEAP_NOELEM;){
-        printf("%d ", res);
-    }
-    putchar('\n');
 
-    maxheap_purge(heap);
-    for (int i = 0; i < 32; ++i){
-        maxheap_insert(heap, i);
+    for (; cur != 0;){
+        parent = ((cur + 1) >> 1) - 1;
+        if (arr[cur] > arr[parent]){
+            printf(
+                REDTEXT"[%d]=%d < [%d]=%d?\n"RESET,
+                cur, arr[cur], parent, arr[parent]
+            );
+            assert(arr[cur] < arr[parent]);
+        }
+        //assert(cur > parent);
+        cur = cur - 1;//parent;
     }
-    for (;(ret = maxheap_extract(heap, &res)) != MAXHEAP_NOELEM;){
-        printf("%d ", res);
-    }
-    putchar('\n');
-
-    maxheap_free(heap);
+    
     return;
 }
 
-void torture_test(void){
-    int fd, ret, res;
-    uint32_t *arr;
-    struct maxheap *heap;
-
-    fd   = open(testfile, O_RDONLY);
-    arr  = malloc(N_INT32*sizeof(uint32_t));
-    heap = maxheap_alloc();
-
-    read(fd, arr, N_INT32*sizeof(uint32_t));
-
-    puts("torture insert");
-    for (int i = 0; i < N_INT32; ++i){
-        //putchar('0');
-        maxheap_insert(heap, arr[i]);
+/* --- test routines --- */
+static
+void test_maxheapify(void){
+    int sz = ARRSZ(arr);
+    
+    maxheapify(arr, sz);
+    for (int i = 0; i < sz; ++i){
+        printf("%d ", arr[i]);
     }
+    putchar('\n');
+    verify_maxheap(arr, sz);
 
-    puts("torture extract");
-    for (;;){
-        ret = maxheap_extract(heap, &res);
-        if (ret == MAXHEAP_NOELEM){
-            break;
-        }
+    return;
+}
+
+static
+void test_binheap(void){
+    struct binheap *heap;
+    int sz = HEAPSZ, res;
+
+    heap = binheap_alloc(sz);
+    for (int i = 0; binheap_insert(heap, i) == 0; i++){
+        ;
     }
-    maxheap_purge(heap);
-    maxheap_free(heap);
-    free(arr);
+    assert(heap->count == sz);
+    verify_maxheap(heap->arr, heap->count);
+
+    for (;binheap_extract(heap, &res) == 0;){
+        //printf("%d ", res);
+        verify_maxheap(heap->arr, heap->count);
+    }
+    putchar('\n');
+
+    binheap_free(heap);
+
     return;
 }
 
 int main(void){
-    basic_test();
-    torture_test();
+    printf("--- Test maxheapify ---\n");
+    test_maxheapify();
+    printf("--- test binheap ---\n");
+    test_binheap();
     return 0;
 }

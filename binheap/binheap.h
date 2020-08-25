@@ -1,35 +1,33 @@
 #ifndef BINHEAP_H
 #define BINHEAP_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
+#include <stddef.h>
 
+/* A max heap/priority queue implementation. */
 
-#define INIT_CAPACITY 32
+/*
+    struct binheap
+    
+    binheap_alloc()
+    binheap_free()
+    
+    binheap_insert()
+    binheap_extract()
+    binheap_chgprior()
+    maxheapify()
+*/
 
-
-struct maxheap {
-    int count, capacity;
+struct binheap {
     int *arr;
+    int count, capacity;
 };
 
-enum {
-    MAXHEAP_OK,
-    MAXHEAP_NOELEM,
-};
+struct binheap *binheap_alloc(size_t cap);
+void binheap_free(struct binheap *heap);
 
+int binheap_insert(struct binheap *heap, int val);
+int binheap_extract(struct binheap *heap, int *res);
 
-void maxheapify(int *arr, unsigned int len);
-
-struct maxheap *maxheap_alloc(void);
-void maxheap_free(struct maxheap *heap);
-void maxheap_purge(struct maxheap *heap);
-
-int maxheap_insert(struct maxheap *heap, int val);
-int maxheap_peek(struct maxheap *heap, int *res);
-int maxheap_extract(struct maxheap *heap, int *res);
-
+void maxheapify(int *arr, int len);
 
 #endif

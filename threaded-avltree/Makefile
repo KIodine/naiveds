@@ -7,7 +7,7 @@ LDFLAGS = -Wl,--version-script=$(CFGDIR)/version.lds
 CFLAGS := -Wall -Wextra -std=c99
 REL_NOWARN := -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter
 RELFLAGS := -O2 -DNDEBUG $(REL_NOWARN)
-DBGFLAGS := -g -O0
+DBGFLAGS := -g -O0 -fsanitize=address
 
 ARFLAGS := -rcs
 
@@ -129,6 +129,7 @@ clean_all: clean
 #	   In short, make merges additional rules into a target.
 
 # --- Complete dependencies. ---
+# Invoke `gcc -MM <srcs,...>` to generate target dependencies.
 obj/avldbg.o: src/avldbg.c include/avldbg.h include/avltree.h include/list.h \
  include/list.h
 obj/avltree.o: src/avltree.c include/avltree.h include/list.h \

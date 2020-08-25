@@ -1,110 +1,180 @@
+#include <assert.h>
+#include <stdlib.h>
+
+
 #include "binheap.h"
 
+/*
+    get_parent()
+    get_left()
+    get_right()
+    get_last_parent()
+    sift_down()
+    sift_up()
+*/
 
-static void heap_grow(struct maxheap *heap){
-    /* alloc new array, copy, free old array */
-    int new_sz, *new_arr;
-    new_sz  = heap->capacity << 1; // just simply grow twice big.
-    new_arr = calloc(new_sz, sizeof(int));
-    
-    memcpy(new_arr, heap->arr, heap->capacity*sizeof(int));
-    free(heap->arr);
-    
-    heap->arr      = new_arr;
-    heap->capacity = new_sz;
+/* --- static routines --- */
+static inline
+int get_parent(int cur){
+    return ((cur + 1) >> 1) - 1;
+}
+
+static inline
+int get_left(int cur){
+    return ((cur + 1) << 1) - 1;
+}
+
+static inline
+int get_right(int cur){
+    return ((cur + 1) << 1);
+}
+
+static inline
+int get_last_parent(int len){
+    return (len - 1) >> 1;
+}
+
+static inline
+void sift_up(int *arr, int cur){
+    int parent, tmp;
+
+    for (; cur != 0;){
+        parent = get_parent(cur);
+        if (arr[cur] > arr[parent]){
+            // do swap
+            tmp         = arr[cur];
+            arr[cur]    = arr[parent];
+            arr[parent] = tmp;
+        } else {
+            break;
+        }
+        /* Ensure the procedure ends eventually. */
+        assert(cur > parent);
+        cur = parent;
+    }
+
+    return;
+}
+
+static inline
+void sift_down(int *arr, int cur, int len){
+    int left, right, subst, tmp;
+
+    for (;cur < len;){
+        subst = cur;
+        left  = get_left(cur);
+        right = left + 1;
+
+        /* boundary check & choose subst. */
+        if (left < len){
+            subst = left;
+        }
+        if (right < len && (arr[right] > arr[left])){
+            subst = right;
+        }
+        if (subst == cur){
+            /* no available child to subst. */
+            break;
+        }
+
+        /* try do swap. */
+        if (arr[subst] > arr[cur]){
+            /* do swap. */
+            tmp        = arr[subst];
+            arr[subst] = arr[cur];
+            arr[cur]   = tmp;
+        } else {
+            break;
+        }
+
+        /* `subst` must be a increasing number. */
+        assert(subst > cur);
+
+        cur = subst;
+    }
+
     return;
 }
 
 
-void maxheapify(int *arr, unsigned int len){
-    int parent, tmp;
-    for (int i = len; i > 1; --i){
-        parent = (i >> 1);
-        if (arr[i-1] > arr[parent-1]){
-            tmp             = arr[i-1];
-            arr[i-1]        = arr[parent-1];
-            arr[parent-1]   = tmp;
+/* --- public routines --- */
+
+void maxheapify(int *arr, int len){
+    int cur;
+    for (cur = get_last_parent(len); ; cur--){
+        sift_down(arr, cur, len);
+        if (cur == 0){
+            break;
         }
     }
     return;
 }
 
-struct maxheap *maxheap_alloc(void){
-    struct maxheap *heap;
-    heap = calloc(1, sizeof(struct maxheap));
-    heap->capacity = INIT_CAPACITY;
-    heap->arr = calloc(INIT_CAPACITY, sizeof(int));
+struct binheap *binheap_alloc(size_t cap){
+    struct binheap *heap;
+    int *arr;
+
+    heap = calloc(1, sizeof(struct binheap));
+    if (heap == NULL){
+        goto heap_alloc_fail;
+    }
+    arr = calloc(1, sizeof(int)*cap);
+    if (arr == NULL){
+        goto arr_alloc_fail;
+    }
+
+    heap->arr      = arr;
+    heap->count    = 0;
+    heap->capacity = cap;
+
     return heap;
+    /* Error handling section. */
+arr_alloc_fail:
+    free(heap);
+heap_alloc_fail:
+    return NULL;
 }
 
-void maxheap_free(struct maxheap *heap){
+void binheap_free(struct binheap *heap){
     free(heap->arr);
     free(heap);
     return;
 }
 
-void maxheap_purge(struct maxheap *heap){
-    free(heap->arr);
-    heap->count     = 0;
-    heap->capacity  = INIT_CAPACITY;
-    heap->arr       = calloc(INIT_CAPACITY, sizeof(int));
-    return;
+int binheap_insert(struct binheap *heap, int val){
+    int cur;
+
+    if (heap->count >= heap->capacity){
+        return -1;
+    }
+
+    cur = heap->count;
+    heap->arr[cur] = val;
+    heap->count   += 1;
+    
+    sift_up(heap->arr, cur);
+
+    return 0;
 }
 
-int maxheap_insert(struct maxheap *heap, int val){
-    int index, parent, tmp, *arr;
-    index = heap->count++;
-    /* TODO: grow if required */
-    if (heap->capacity <= heap->count){
-        heap_grow(heap);
-    }
-    arr = heap->arr;
-    arr[index] = val;
-    index++;
-    for (;;){
-        parent = index >> 1;
-        if (parent == 0){ break;}
-        if (arr[parent-1] < arr[index-1]){
-            tmp           = arr[index-1];
-            arr[index-1]  = arr[parent-1];
-            arr[parent-1] = tmp;
-            index = parent;
-        } else {
-            break;
-        }
-    }
-    return MAXHEAP_OK;
-}
 
-int maxheap_peek(struct maxheap *heap, int *res){
-    if (heap->count == 0){ return MAXHEAP_NOELEM;};
+int binheap_extract(struct binheap *heap, int *res){
+    int cur;
+
+    if (heap->count == 0 || res == NULL){
+        return -1;
+    }
+
+    cur = heap->count;
+
+    /* Return max value and subst with last value in heap. */
     *res = heap->arr[0];
-    return MAXHEAP_OK;
+    heap->arr[0] = heap->arr[cur-1];
+    heap->count -= 1;
+
+    sift_down(heap->arr, 0, heap->count);
+
+    return 0;
 }
 
-int maxheap_extract(struct maxheap *heap, int *res){
-    int index = 1, child, tmp, *arr;
-    if (heap->count == 0){ return MAXHEAP_NOELEM;};
-    arr = heap->arr;
-    *res = arr[0];
-    arr[0] = arr[heap->count-1];
-    heap->count -= 1;
-    for (;;){
-        child = index << 1;
-        if (child > heap->count){ break;}
-        /* switch if parent is smaller than one of its children */
-        if (arr[index-1] > arr[child-1] && arr[index-1] > arr[child]){
-            /* We've moved the element to the right place */
-            break;
-        }
-        if (arr[child-1] < arr[child]){
-            /* if left gt right */
-            child += 1;
-        }
-        tmp          = arr[child-1];
-        arr[child-1] = arr[index-1];
-        arr[index-1] = tmp;
-        index = child;
-    }
-    return MAXHEAP_OK;
-}
+// TODO

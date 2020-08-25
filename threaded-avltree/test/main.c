@@ -1,9 +1,12 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <unistd.h>
 #include <assert.h>
 #include <fcntl.h>
+
+#include <time.h>
 
 #include "avltree.h"
 #include "avldbg.h"
@@ -16,6 +19,9 @@ struct pair {
     struct avlnode node;
     int key;
 };
+
+struct timespec ts_start, ts_dt;
+double dt_ms_f64 = 0.0;
 
 static
 int pair_cmp(struct avlnode const *a, struct avlnode const *b){
@@ -70,16 +76,28 @@ void do_test(void){
     }
     shuffle(narr, N_NODES);
 
+    printf("operating on %d nodes."NL, N_NODES);
+
     printf("test insert...");
+    clock_gettime(CLOCK_MONOTONIC, &ts_start);
     for (int i = 0; i < N_NODES; ++i){
         parr[i].key = narr[i];
         tmp_node = avl_insert(&tree, &parr[i].node);
         assert(tmp_node == &parr[i].node);
     }
+    clock_gettime(CLOCK_MONOTONIC, &ts_dt);
+    ts_dt.tv_sec  -= ts_start.tv_sec;
+    ts_dt.tv_nsec -= ts_start.tv_nsec;
+    dt_ms_f64 = ((double)ts_dt.tv_sec)*1e6 + ((double)ts_dt.tv_nsec)/1e3;
+    dt_ms_f64 /= (double)N_NODES;
+
     avl_validate(&tree);
-    printf("ok"NL);
+    printf("ok: %.3f us/op"NL, dt_ms_f64);
+
+    /* ----- */
 
     printf("test get...");
+    clock_gettime(CLOCK_MONOTONIC, &ts_start);
     for (int i = 0; i < N_NODES; ++i){
         hint_pair.key = narr[i];
         tmp_node = avl_get(&tree, &hint_pair.node);
@@ -87,16 +105,33 @@ void do_test(void){
         tmp_pair = container_of(tmp_node, struct pair, node);
         assert(tmp_pair->key == narr[i]);
     }
-    printf("ok"NL);
+    clock_gettime(CLOCK_MONOTONIC, &ts_dt);
+    ts_dt.tv_sec  -= ts_start.tv_sec;
+    ts_dt.tv_nsec -= ts_start.tv_nsec;
+    dt_ms_f64 = ((double)ts_dt.tv_sec)*1e6 + ((double)ts_dt.tv_nsec)/1e3;
+    dt_ms_f64 /= (double)N_NODES;
+
+    printf("ok: %.3f us/op"NL, dt_ms_f64);
+
+    /* ----- */
 
     printf("test delete...");
+    clock_gettime(CLOCK_MONOTONIC, &ts_start);
     for (int i = 500; i < 6000; ++i){
         tmp_pair = &parr[i];
         tmp_node = avl_delete(&tree, &tmp_pair->node);
         assert(tmp_node == &tmp_pair->node);
     }
+    clock_gettime(CLOCK_MONOTONIC, &ts_dt);
+    ts_dt.tv_sec  -= ts_start.tv_sec;
+    ts_dt.tv_nsec -= ts_start.tv_nsec;
+    dt_ms_f64 = ((double)ts_dt.tv_sec)*1e6 + ((double)ts_dt.tv_nsec)/1e3;
+    dt_ms_f64 /= (double)(6000-500);
+
     avl_validate(&tree);
-    printf("ok"NL);
+    printf("ok: %.3f us/op"NL, dt_ms_f64);
+
+    /* ----- */
 
     printf("Function test done"NL);
     free(parr);

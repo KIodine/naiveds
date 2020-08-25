@@ -278,6 +278,7 @@ struct avlnode *avl_delete(struct avltree *tree, struct avlnode *node){
     //  - root is reached
     //  - proper fix is applied
     //  - the fix node just become inbalance/skew
+    //    (just handled a single-heavy case)
 
     if (fix->factor != 0 && abs(fix->factor) < 2){
         goto delete_done;
