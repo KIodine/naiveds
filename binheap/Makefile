@@ -1,16 +1,27 @@
 CC := cc
-CFLAGS := -g -Wall -O0 -pedantic
 VG := valgrind
+
+CFLAGS := -Wall -Wextra -std=c99
+DBGFLAGS = -g -O0 -fsanitize=address
+RELFLAGS = -O2 -DNDEBUG ${RELNOWARN}
+RELNOWARN = 
+
 VGFLAGS := --show-leak-kinds=all --leak-check=full --verbose
 
 OBJS := main.o binheap.o
 BIN := binheap-test
 
+# TODO: Rewrite.
+ifeq (${DEBUG}, 1)
+	CFLAGS += ${DBGFLAGS}
+else
+	CFLAGS += ${RELFLAGS}
+endif
 
 .PHONY: buildtest runtest runcheck clean clean_all
 
-%.o: %.c
-	${CC} ${CFLAGS} -c $< -o $@
+${OBJS}: %.o: %.c
+	${CC} ${CFLAGS} -o $@ -c $<
 
 $(BIN): ${OBJS}
 	${CC} ${CFLAGS} -o ${BIN} ${OBJS}
@@ -20,7 +31,7 @@ runtest: buildtest
 	./${BIN}
 
 runcheck: buildtest
-	${VG} ${VGFLAGS} ${BIN}
+	${VG} ${VGFLAGS} ./${BIN}
 
 clean:
 	rm -rf ${OBJS}
