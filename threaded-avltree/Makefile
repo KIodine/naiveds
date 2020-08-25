@@ -7,7 +7,7 @@ LDFLAGS = -Wl,--version-script=$(CFGDIR)/version.lds
 CFLAGS := -Wall -Wextra -std=c99
 REL_NOWARN := -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter
 RELFLAGS := -O2 -DNDEBUG $(REL_NOWARN)
-DBGFLAGS := -g -O0
+DBGFLAGS := -g -O0 -fsanitize=address
 
 ARFLAGS := -rcs
 
