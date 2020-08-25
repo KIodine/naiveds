@@ -85,6 +85,15 @@ void torture_test(void){
     }
     rbtree_validate(tree);
 
+    printf("torture purge"NL);
+    rbtree_purge(tree);
+    
+    printf("torture set2"NL);
+    for (int i = 0; i < count; ++i){
+        rbtree_set(tree, buffer[i], 0);
+    }
+    rbtree_validate(tree);
+
     printf("torture free"NL);
     rbtree_free(tree);
     free(buffer);
