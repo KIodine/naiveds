@@ -9,9 +9,18 @@
 static int shuffle_int(int arr[], int n);
 
 static int basic_test(void);
-static int main_test(void);
+static int main_test(int test_nodes);
 
-static int const test_nodes = 10000;
+//static int const test_nodes = 2600000;
+static int const test_scales[] = {
+    /*
+    100000,
+    200000,
+    400000,
+    800000,
+    */
+    1600000
+};
 
 int main(int argc, char **argv){
     srand(1997);
@@ -19,7 +28,9 @@ int main(int argc, char **argv){
     // ---
     basic_test();
     printf("--- Basic test done ---\n");
-    main_test();
+    for (int i = 0; i < sizeof(test_scales)/sizeof(test_scales[0]); i++){
+        main_test(test_scales[i]);
+    }
     printf("--- Main test done ---\n");
     return 0;
 }
@@ -63,10 +74,10 @@ static int basic_test(void){
     return 0;
 }
 
-static int main_test(void){
+static int main_test(int test_nodes){
     int ret, res, *arr;
     struct timespec start, dt;
-    int ns;
+    double ns;
     struct skiplist *slist = NULL;
 
     /* TODO: use shuffled array for test. */
@@ -91,9 +102,9 @@ static int main_test(void){
     }
     dt.tv_nsec -= start.tv_nsec;
     dt.tv_sec  -= start.tv_sec;
-    ns = dt.tv_nsec + dt.tv_sec*1000000000;
-    ns /= test_nodes;
-    printf("avg costs %d ns.\n", ns);
+    ns = (double)dt.tv_nsec + ((double)dt.tv_sec*1e9);
+    ns /= (double)test_nodes;
+    printf("avg costs %.3f ns.\n", ns);
 
     /* Ensure all nodes are inserted and properly set. */
     printf("fetching %d nodes.\n", test_nodes);
@@ -109,9 +120,9 @@ static int main_test(void){
     }
     dt.tv_nsec -= start.tv_nsec;
     dt.tv_sec  -= start.tv_sec;
-    ns = dt.tv_nsec + dt.tv_sec*1000000000;
-    ns /= test_nodes;
-    printf("avg costs %d ns.\n", ns);
+    ns = (double)dt.tv_nsec + ((double)dt.tv_sec*1e9);
+    ns /= (double)test_nodes;
+    printf("avg costs %.3f ns.\n", ns);
     
     /* Delete some nodes. */
     printf("delete %d nodes.\n", (test_nodes-test_nodes/4));
@@ -126,9 +137,9 @@ static int main_test(void){
     }
     dt.tv_nsec -= start.tv_nsec;
     dt.tv_sec  -= start.tv_sec;
-    ns = dt.tv_nsec + dt.tv_sec*1000000000;
-    ns /= (test_nodes-test_nodes/4);
-    printf("avg costs %d ns.\n", ns);
+    ns = (double)dt.tv_nsec + ((double)dt.tv_sec*1e9);
+    ns /= (double)(test_nodes-test_nodes/4);
+    printf("avg costs %.3f ns.\n", ns);
     
     /* Ensure those deleted are unreachable. */
     for (int i = test_nodes/4; i < test_nodes; ++i){
