@@ -13,6 +13,7 @@ struct skiplist_link {
 
 /* TODO: Move `links` to head and alloc separately. */
 struct skiplist_node {
+    //struct skiplist_link *links; // flex array member.
     int key, val;
     int level;
     struct skiplist_link links[]; // flex array member.

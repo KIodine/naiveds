@@ -14,13 +14,12 @@ static struct skiplist_node *skiplist_get_ex(
 
 static int generate_level(void){
     int level = 0;
-    // Branch factor does impact performance?
     for (;level < SKIPLIST_MAX_LEVEL;){
         /* approximately 1/4 ~= 0.25 */
         // or better implementation?
         if (rand() < RAND_MAX/2 && level < (SKIPLIST_MAX_LEVEL-1)){
             level++;
-            continue; // damn.
+            continue;
         }
         break;
     }
@@ -30,7 +29,6 @@ static int generate_level(void){
 
 static struct skiplist_node *slist_node_alloc(int level){
     struct skiplist_node *snode = NULL;
-    //
     if (level < 0){
         return NULL;
     }
@@ -38,8 +36,6 @@ static struct skiplist_node *slist_node_alloc(int level){
     snode = calloc(
         1, sizeof(struct skiplist_node)+sizeof(struct skiplist_link)*(level+1)
     );
-    // links = calloc(1, sizeof(struct skiplist_link)*(level+1));
-    // snode->links = links
     if (snode == NULL){
         return NULL;
     }
@@ -103,12 +99,9 @@ static struct skiplist_node *skiplist_get_ex(
     int s = 0;
     for (;cur_lvl >= 0; cur_lvl--){
         nxt = cur[cur_lvl].next;
-        /*  The most time-consuming part (about half the execution time).
-            If we can do some optimize, that will be a huge improvment.
-        */
+        /* Tree-like structures are less able to utilize cache. */
         for (;nxt != NULL && nxt->key < key;){
             s++;
-            /* Proceed until we can't. */
             cur = nxt->links;
             nxt = cur[cur_lvl].next;
         }
@@ -166,13 +159,6 @@ int skiplist_set(struct skiplist *slist, int key, int val){
     node->key = key;
     node->val = val;
 
-    /*
-    for i := range element.next {
-		element.next[i] = prevs[i].next[i]
-		prevs[i].next[i] = element
-	}
-    */
-
     struct skiplist_node *nxt;
     struct skiplist_link *prv;
     for (int i = 0; i < (level+1); i++){
@@ -180,7 +166,6 @@ int skiplist_set(struct skiplist *slist, int key, int val){
         nxt = prv[i].next;
 
         node->links[i].next = nxt;
-        /* link prev->links[i].next = node */
         
         prv[i].next = node;
     }
