@@ -30,7 +30,7 @@ static int generate_level(void){
 
 static struct skiplist_node *slist_node_alloc(int level){
     struct skiplist_node *snode = NULL;
-
+    //
     if (level < 0){
         return NULL;
     }
@@ -38,6 +38,8 @@ static struct skiplist_node *slist_node_alloc(int level){
     snode = calloc(
         1, sizeof(struct skiplist_node)+sizeof(struct skiplist_link)*(level+1)
     );
+    // links = calloc(1, sizeof(struct skiplist_link)*(level+1));
+    // snode->links = links
     if (snode == NULL){
         return NULL;
     }
@@ -59,10 +61,6 @@ struct skiplist *skiplist_alloc(void){
     if (header == NULL){
         goto header_fail;
     }
-    for (int i = 0; i < SKIPLIST_MAX_LEVEL; i++){
-        header->links[i].next = header;
-        header->links[i].prev = header;
-    }
     slist->header = header;
 
     return slist;
@@ -77,7 +75,7 @@ void skiplist_free(struct skiplist *slist){
 
     /* The lowest level consists all links. */
     cur = slist->header->links[0].next;
-    for (;cur != slist->header;){
+    for (;cur != NULL;){
         nxt = cur->links[0].next;
         free(cur);
         cur = nxt;
@@ -97,34 +95,19 @@ static struct skiplist_node *skiplist_get_ex(
 ){
     // ---
     struct skiplist_node *nxt, *cur, *found = NULL;
-    struct skiplist_node *const header = slist->header;
-    int cur_lvl = slist->current_max_level;
+    //struct skiplist_link *links;
+    int cur_lvl = SKIPLIST_MAX_LEVEL-1;//slist->current_max_level;
 
     cur = slist->header;
 
     if (cur_lvl < 0){
         return NULL;
     }
-
+/*
     for (int i = 0; i < SKIPLIST_MAX_LEVEL; i++){
         prevs[i] = cur;
     }
-    /*
-        loop:
-            if nxt is valid and less than target:
-                goto nxt
-                continue
-            if nxt is valid and nxt equals to target
-                set found = 1
-            assert nxt is null or nxt is greater than target
-            record nxt as prev
-            if no level to down
-                break
-            down the level, select new nxt
-        if nxt is not null and nxt is target:
-            found = 1
-    */
-    
+  */  
     for (;cur_lvl >= 0; cur_lvl--){
         nxt = cur->links[cur_lvl].next;
         /*  The most time-consuming part (about half the execution time).
@@ -132,17 +115,17 @@ static struct skiplist_node *skiplist_get_ex(
             possible improvment:
             - No `prev` link, shrinking the size of `links` member by half.
         */
-        for (;nxt->key < key && nxt != header;){
+        for (;nxt != NULL && nxt->key < key;){
             /* Proceed until we can't. */
             cur = nxt;
             nxt = cur->links[cur_lvl].next;
         }
-        assert(nxt == header || nxt->key >= key);
+        assert(nxt == NULL || nxt->key >= key);
 
         /* record `cur` as prev and down the level. */
         prevs[cur_lvl] = cur;
     }
-    if (nxt != header && nxt->key == key){
+    if (nxt != NULL && nxt->key == key){
         found = nxt;
     }
 
@@ -155,23 +138,24 @@ int skiplist_get(struct skiplist *slist, int key, int *res){
     struct skiplist_node *prevs[SKIPLIST_MAX_LEVEL];
     struct skiplist_node *target = NULL;
 
-    //target = skiplist_get_ex(slist, key, prevs);
+    target = skiplist_get_ex(slist, key, prevs);
 
     // "inlining" the logic does not have much impact on time.
+    /*
     struct skiplist_node *prv = slist->header, *nxt;
     for (int i = slist->current_max_level; i >= 0; i--){
         nxt = prv->links[i].next;
-        for (;nxt != slist->header && nxt->key < key;){
+        for (;nxt != NULL && nxt->key < key;){
             prv = nxt;
             nxt = nxt->links[i].next;
         }
     }
-    if (nxt != slist->header && nxt->key == key){
+    if (nxt != NULL && nxt->key == key){
         *res = nxt->val;
         return 0;
     }
     return -1;
-
+*/
 
     if (target != NULL){
         *res = target->val;
@@ -210,12 +194,10 @@ int skiplist_set(struct skiplist *slist, int key, int val){
     for (int i = 0; i < (level+1); i++){
         prv = prevs[i];
         nxt = prv->links[i].next;
-        assert(prv != NULL && nxt != NULL);
+        assert(prv != NULL);
 
         node->links[i].next = nxt;
-        node->links[i].prev = prv;
         prv->links[i].next = node;
-        nxt->links[i].prev = node;
     }
 
     return 0;
@@ -233,10 +215,8 @@ int skiplist_del(struct skiplist *slist, int key){
     for (int i = 0; i < (node->level+1); ++i){
         prv = prevs[i];
         nxt = node->links[i].next;
-        assert(nxt->level >= i);
 
         prv->links[i].next = nxt;
-        nxt->links[i].prev = prv;
     }
     free(node);
 

@@ -9,12 +9,13 @@
 /* > Hide definition completly? */
 
 struct skiplist_link {
-    struct skiplist_node *prev, *next;
+    struct skiplist_node *next;
 };
 
+/* TODO: Move `links` to head and alloc separately. */
 struct skiplist_node {
     int key, val;
-    int level;  // probably not necessary.
+    int level;
     struct skiplist_link links[]; // flex array member.
 };
 

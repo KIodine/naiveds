@@ -13,13 +13,13 @@ static int main_test(int test_nodes);
 
 //static int const test_nodes = 2600000;
 static int const test_scales[] = {
-    /*
     100000,
     200000,
     400000,
     800000,
-    */
+    /*
     1600000
+    */
 };
 
 int main(int argc, char **argv){
@@ -28,7 +28,8 @@ int main(int argc, char **argv){
     // ---
     basic_test();
     printf("--- Basic test done ---\n");
-    for (int i = 0; i < sizeof(test_scales)/sizeof(test_scales[0]); i++){
+    for (unsigned int i = 0; i < sizeof(test_scales)/sizeof(test_scales[0]); i++){
+        printf("> Testing on %d nodes.\n", test_scales[i]);
         main_test(test_scales[i]);
     }
     printf("--- Main test done ---\n");
@@ -90,7 +91,7 @@ static int main_test(int test_nodes){
     slist = skiplist_alloc();
 
     /* Setup nodes. */
-    printf("Setup %d nodes.\n", test_nodes);
+    printf("Setup nodes...", test_nodes);
     clock_gettime(CLOCK_MONOTONIC, &start);
     for (int i = 0; i < test_nodes; ++i){
         ret = skiplist_set(slist, arr[i], i);
@@ -107,7 +108,7 @@ static int main_test(int test_nodes){
     printf("avg costs %.3f ns.\n", ns);
 
     /* Ensure all nodes are inserted and properly set. */
-    printf("fetching %d nodes.\n", test_nodes);
+    printf("fetching nodes...", test_nodes);
     clock_gettime(CLOCK_MONOTONIC, &start);
     for (int i = 0; i < test_nodes; ++i){
         ret = skiplist_get(slist, arr[i], &res);
@@ -125,7 +126,7 @@ static int main_test(int test_nodes){
     printf("avg costs %.3f ns.\n", ns);
     
     /* Delete some nodes. */
-    printf("delete %d nodes.\n", (test_nodes-test_nodes/4));
+    printf("delete 75%% nodes...", (test_nodes-test_nodes/4));
     clock_gettime(CLOCK_MONOTONIC, &start);
     for (int i = test_nodes/4; i < test_nodes; ++i){
         ret = skiplist_del(slist, arr[i]);
@@ -142,10 +143,21 @@ static int main_test(int test_nodes){
     printf("avg costs %.3f ns.\n", ns);
     
     /* Ensure those deleted are unreachable. */
+    printf("Ensure nodes are deleted...");
+    clock_gettime(CLOCK_MONOTONIC, &start);
     for (int i = test_nodes/4; i < test_nodes; ++i){
         ret = skiplist_get(slist, arr[i], &res);
         assert(ret == -1);
     }
+    clock_gettime(CLOCK_MONOTONIC, &dt);
+    if (dt.tv_nsec < start.tv_nsec){
+        dt.tv_sec -= 1; dt.tv_nsec += 1000000000;
+    }
+    dt.tv_nsec -= start.tv_nsec;
+    dt.tv_sec  -= start.tv_sec;
+    ns = (double)dt.tv_nsec + ((double)dt.tv_sec*1e9);
+    ns /= (double)test_nodes;
+    printf("avg costs %.3f ns.\n", ns);
 
     skiplist_free(slist);
     slist = NULL;

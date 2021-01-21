@@ -2,7 +2,7 @@ CC := cc
 AR := ar
 
 CFLAGS := -Wall -Wextra -std=c99
-RELFLAGS := -O1
+RELFLAGS := -O2
 DBGFLAGS := -g -O0 #-fsanitize=address
 
 ARFLAGS := -rcs
