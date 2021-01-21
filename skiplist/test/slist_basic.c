@@ -13,12 +13,15 @@ static int main_test(int test_nodes);
 
 //static int const test_nodes = 2600000;
 static int const test_scales[] = {
+    /*
+    16,
+    */
     100000,
     200000,
     400000,
     800000,
-    /*
     1600000
+    /*
     */
 };
 
@@ -78,10 +81,10 @@ static int basic_test(void){
 static int main_test(int test_nodes){
     int ret, res, *arr;
     struct timespec start, dt;
+    long long steps;
     double ns;
     struct skiplist *slist = NULL;
 
-    /* TODO: use shuffled array for test. */
     arr = malloc(test_nodes*sizeof(int));
     for (int i = 0; i < test_nodes; i++){
         arr[i] = i;
@@ -91,7 +94,7 @@ static int main_test(int test_nodes){
     slist = skiplist_alloc();
 
     /* Setup nodes. */
-    printf("Setup nodes...", test_nodes);
+    printf("Setup nodes...");
     clock_gettime(CLOCK_MONOTONIC, &start);
     for (int i = 0; i < test_nodes; ++i){
         ret = skiplist_set(slist, arr[i], i);
@@ -105,10 +108,11 @@ static int main_test(int test_nodes){
     dt.tv_sec  -= start.tv_sec;
     ns = (double)dt.tv_nsec + ((double)dt.tv_sec*1e9);
     ns /= (double)test_nodes;
-    printf("avg costs %.3f ns.\n", ns);
+    printf(" %.3f ns/op\n", ns);
 
     /* Ensure all nodes are inserted and properly set. */
-    printf("fetching nodes...", test_nodes);
+    slist->search_steps = 0;
+    printf("fetching nodes...");
     clock_gettime(CLOCK_MONOTONIC, &start);
     for (int i = 0; i < test_nodes; ++i){
         ret = skiplist_get(slist, arr[i], &res);
@@ -123,10 +127,11 @@ static int main_test(int test_nodes){
     dt.tv_sec  -= start.tv_sec;
     ns = (double)dt.tv_nsec + ((double)dt.tv_sec*1e9);
     ns /= (double)test_nodes;
-    printf("avg costs %.3f ns.\n", ns);
+    printf(" %.3f ns/op\n", ns);
+    steps = slist->search_steps/test_nodes;
     
     /* Delete some nodes. */
-    printf("delete 75%% nodes...", (test_nodes-test_nodes/4));
+    printf("delete 75%% nodes...");
     clock_gettime(CLOCK_MONOTONIC, &start);
     for (int i = test_nodes/4; i < test_nodes; ++i){
         ret = skiplist_del(slist, arr[i]);
@@ -140,7 +145,7 @@ static int main_test(int test_nodes){
     dt.tv_sec  -= start.tv_sec;
     ns = (double)dt.tv_nsec + ((double)dt.tv_sec*1e9);
     ns /= (double)(test_nodes-test_nodes/4);
-    printf("avg costs %.3f ns.\n", ns);
+    printf(" %.3f ns/op\n", ns);
     
     /* Ensure those deleted are unreachable. */
     printf("Ensure nodes are deleted...");
@@ -157,7 +162,13 @@ static int main_test(int test_nodes){
     dt.tv_sec  -= start.tv_sec;
     ns = (double)dt.tv_nsec + ((double)dt.tv_sec*1e9);
     ns /= (double)test_nodes;
-    printf("avg costs %.3f ns.\n", ns);
+    printf(" %.3f ns/op\n", ns);
+
+    printf("Dist of levels:\n");
+    for (int i = 0; i < SKIPLIST_MAX_LEVEL; i++){
+        printf("[%2d]=%d\n", i, slist->dist[i]);
+    }
+    printf("Avg search steps: %lld\n", steps);
 
     skiplist_free(slist);
     slist = NULL;

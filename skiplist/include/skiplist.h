@@ -3,7 +3,6 @@
 
 
 #define SKIPLIST_MAX_LEVEL 24
-#define SKIPLIET_UPGRADE_RATIO (4096)
 
 
 /* > Hide definition completly? */
@@ -22,6 +21,9 @@ struct skiplist_node {
 struct skiplist {
     int current_max_level;
     struct skiplist_node *header;
+    /* debug */
+    int dist[SKIPLIST_MAX_LEVEL];
+    long long search_steps;
 };
 
 
