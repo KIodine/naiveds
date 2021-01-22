@@ -1,0 +1,15 @@
+- Testing on randomly distributed ints.
+- No significant search step growth as number of nodes grows (assume
+  randomly searching through).
+- The logic itself works, it is the cache misses cause the program
+  going slower as the number of nodes grows.
+- How to reduce the misses?
+- Mimicing the code in the reference does not do much about it (even worse!).
+- Works insanly nice with sorted input, fully utilized cache.
+- Seems the test held by the author does not test randomly distributed keys?
+    - Skiplist is suitable for mostly-ordered data. For randomly distributed
+      data, you may try hashmap.
+
+ref:
+- https://github.com/sean-public/fast-skiplist
+    Very fast skiplist in Golang, singly-linked nodes.
