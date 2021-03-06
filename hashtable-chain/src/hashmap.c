@@ -145,6 +145,10 @@ struct map_node **map_find_slot(
     */
     tmp = bucket;
     for (;(*tmp) != NULL;){
+        // Hash value might be the same on different objects, but
+        // if hash value is not the same, the two objects must be
+        // different. This will provide a much lower cost comparing
+        // doing full comparison each time.
         if ((*tmp)->hashval == hashval){
             if (cmp(*tmp, mnode) != 0){
                 break;
