@@ -50,7 +50,7 @@ static int basic_test(void){
     const size_t n_data = 197;
     int32_t *int_arr;
 
-    datamap = map_alloc(8, data_hasher, data_cmp);
+    datamap = map_alloc(256, data_hasher, data_cmp);
 
     int_arr = malloc(sizeof(int32_t) * n_data);
     for (unsigned int i = 0; i < n_data; ++i){
